@@ -1,3 +1,4 @@
+# **Do not change without a global search/replace for this version string.**
 ARG SWIFT_VERSION=5.10
 # Other ARG declarations must follow FROM
 FROM swift:${SWIFT_VERSION}

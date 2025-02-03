@@ -1,3 +1,4 @@
+// **Do not change without a global search/replace for this version string.**
 // swift-tools-version:5.10
 import Foundation
 import PackageDescription
