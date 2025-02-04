@@ -359,3 +359,17 @@ public conformance Int8: Strideable {
   }
 
 }
+
+public conformance Int8: ForeignConvertible {
+
+  public typealias ForeignRepresentation = Builtin.i8
+
+  public init(foreign_value: sink Builtin.i8) {
+    &self.value = foreign_value
+  }
+
+  public fun foreign_value() -> Builtin.i8 {
+    value
+  }
+
+}

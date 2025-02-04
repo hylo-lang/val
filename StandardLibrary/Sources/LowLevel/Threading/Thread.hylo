@@ -1,0 +1,75 @@
+
+/// A unique identifier for a running thread.
+///
+/// This is an abstraction over the thread ID for the underlying operating system.
+public type ThreadId {
+
+  /// The underlying thread ID, as seen by the operating system.
+  var id: pthread_t
+
+  /// Initializes `self` with the given operating system thread ID.
+  internal init(os_value: pthread_t) {
+    &id = .new(truncating_or_extending: os_value)
+  }
+
+  /// Returns `self` as a numeric value.
+  public fun numeric_value() -> UInt64 {
+    UInt64(truncating_or_extending: id)
+  }
+
+}
+conformance ThreadId: Regular {}
+
+
+/// Handler for a thread that is being executed.
+///
+/// This allows the caller to wait for the thread to complete. The caller needs to ensure that the
+/// thread joins before the handler is destroyed.
+///
+/// TODO: return type should be generic
+public type ThreadCompletion {
+
+  /// The underlying thread object, as seen by the operating system.
+  var thread: OSThread
+
+  /// Initializes `self` with the given operating system thread object.
+  internal memberwise init
+
+  /// Returns the unique identifier for the thread.
+  public fun thread_id() -> ThreadId {
+    .new(os_value: thread.id())
+  }
+
+  /// Awaits for the thread to complete
+  public fun await() sink {
+    &thread.join()
+  }
+
+}
+
+/// Creates a new thread that will execute `f`.
+public fun spawn_thread(executing f: sink []() -> Void) -> ThreadCompletion {
+  .new(thread: OSThread.spawn_thread(stack: 0, executing: f))
+}
+
+/// Creates a new thread that will execute `f`, using a stack size of `stack_size`.
+public fun spawn_thread(stack_size: UInt, executing f: sink []() -> Void) -> ThreadCompletion {
+  .new(thread: OSThread.spawn_thread(stack: stack_size, executing: f))
+}
+
+/// Returns the unique identifier for the current thread.
+public fun current_thread_id() -> ThreadId {
+  .new(os_value: pthread_self())
+}
+
+/// Yields the current execution time slice to the operating system.
+public fun yield_now() {
+  OSThread.yield_now()
+}
+
+/// Returns the available parallelism on the system.
+///
+/// In case we cannot find the number of processors, we return `0`.
+public fun available_parallelism() -> Int {
+  OSThread.available_parallelism()
+}

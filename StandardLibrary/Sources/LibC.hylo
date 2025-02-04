@@ -51,3 +51,18 @@ public fun memcpy(
 public fun memmove(
   _ destination: MemoryAddress, _ source: MemoryAddress, _ count: Int
 ) -> MemoryAddress
+
+
+/// Get system configuration for `name` at run time.
+///
+/// See https://www.man7.org/linux/man-pages/man3/sysconf.3.html.
+@ffi("sysconf")
+internal fun sysconf(name: c_int) -> c_long
+
+/// Give the current thread time slice back to the OS scheduler.
+///
+/// The thread is moved to the end of the queue for its static priority and a new thread gets to run.
+///
+/// See: https://www.man7.org/linux/man-pages/man2/sched_yield.2.html
+@ffi("sched_yield")
+internal fun sched_yield() -> c_int

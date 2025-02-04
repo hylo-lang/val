@@ -1,0 +1,83 @@
+internal let invalid_thread_id: pthread_t = 0xffffffffffffffff
+
+internal type OSThread {
+
+  var id: pthread_t
+
+  internal memberwise init
+
+  internal init() {
+    &id = invalid_thread_id.copy()
+  }
+
+  internal fun deinit() {
+    precondition(id < 0, "Thread is not joined before destruction.")
+  }
+
+  internal static fun spawn_thread(stack: UInt, executing f: sink []() -> Void) -> OSThread {
+    #if os(Linux) || os(macOS)
+      // TODO: improve error handling
+      let pf = deref(take_address(&f))
+      var thread_id: pthread_t = invalid_thread_id.copy()
+      var attr: pthread_attr_t = .new()
+      let pattr = mutable_pointer[to: &attr]
+      if pthread_attr_init(pattr) != 0 { return .new() }
+      if stack > 0 {
+        if pthread_attr_setstacksize(pattr, c_size_t(truncating_or_extending: stack)) != 0 { return .new() }
+      }
+      if pthread_create(mutable_pointer[to: &thread_id], pattr, pf) != 0 { return .new() }
+
+      return .new(id: thread_id)
+    #else
+      return .new()
+    #endif
+  }
+
+  internal fun yield_now() {
+    #if os(Linux) || os(macOS)
+      let _ = sched_yield()
+    #endif
+  }
+
+  internal fun join() sink {
+    #if os(Linux) || os(macOS)
+      precondition(id >= 0, "Thread is not running while attempting to join it.")
+      // TODO: handle errors.
+      // TODO: handle return vales from the thread.
+      var ret: MemoryAddress = .null()
+      let _ = pthread_join(id, mutable_pointer[to: &ret])
+      let _ = pthread_detach(id)
+      &id = invalid_thread_id.copy()
+    #endif
+  }
+
+  internal fun id() -> pthread_t {
+    self.id.copy()
+  }
+
+  internal static fun available_parallelism() -> Int {
+    #if os(Linux) || os(macOS)
+      #if os(Linux)
+        let _SC_NPROCESSORS_ONLN: c_int = 84
+      #elseif os(macOS)
+        let _SC_NPROCESSORS_ONLN: c_int = 58
+      #endif
+      let r = sysconf(name: _SC_NPROCESSORS_ONLN)
+      if r >= 0 {
+        return Int(truncating_or_extending: r)
+      }
+      #endif
+    return 0
+  }
+
+  static fun take_address<T>(_ x: inout T) -> MemoryAddress {
+    return MemoryAddress(type_punning: mutable_pointer[to: &x])
+  }
+
+  static fun deref(_ p: MemoryAddress) -> MemoryAddress {
+    return PointerToMutable<MemoryAddress>(type_punning: p).unsafe_pointee()
+  }
+
+}
+
+conformance OSThread: Deinitializable {}

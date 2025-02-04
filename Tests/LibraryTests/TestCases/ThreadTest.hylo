@@ -1,0 +1,21 @@
+//- compileAndRun expecting: .success
+
+fun thread_function() {
+  print("Hello from thread!")
+}
+
+public fun main() {
+  var future = spawn_thread(executing: fun() { thread_function() })
+  precondition(future.thread_id().numeric_value() >= 0, "Thread creation failed.")
+  let tid = future.thread_id().numeric_value()
+  future.await()
+  print("thread ID: ", terminator: "")
+  print(Int(truncating_or_extending: tid))
+
+  print("Available parallelism: ", terminator: "")
+  print(available_parallelism())
+
+  precondition(tid != 0)
+  precondition(tid != UInt64(truncating_or_extending: -1))
+  precondition(tid != current_thread_id().numeric_value())
+}

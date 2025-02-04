@@ -1,0 +1,9 @@
+
+/// Type alias compatible with C `size_t` type.
+public typealias c_size_t = UInt64
+/// Type alias compatible with C `size_t` type.
+public typealias c_ptrdiff_t = Int64
+/// Type alias compatible with C `int` type.
+public typealias c_int = Int
+/// Type alias compatible with C `long` type.
+public typealias c_long = Int64

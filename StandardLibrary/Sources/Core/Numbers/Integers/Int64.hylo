@@ -354,3 +354,17 @@ public conformance Int64: Strideable {
   }
 
 }
+
+public conformance Int64: ForeignConvertible {
+
+  public typealias ForeignRepresentation = Builtin.i64
+
+  public init(foreign_value: sink Builtin.i64) {
+    &self.value = foreign_value
+  }
+
+  public fun foreign_value() -> Builtin.i64 {
+    value
+  }
+
+}

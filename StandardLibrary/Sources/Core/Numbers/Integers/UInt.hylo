@@ -299,3 +299,17 @@ public conformance UInt: FixedWidthInteger {
   }
 
 }
+
+public conformance UInt: ForeignConvertible {
+
+  public typealias ForeignRepresentation = Builtin.word
+
+  public init(foreign_value: sink Builtin.word) {
+    &self.value = foreign_value
+  }
+
+  public fun foreign_value() -> Builtin.word {
+    value
+  }
+
+}

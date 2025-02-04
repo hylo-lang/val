@@ -353,3 +353,17 @@ public conformance Int32: Strideable {
   }
 
 }
+
+public conformance Int32: ForeignConvertible {
+
+  public typealias ForeignRepresentation = Builtin.i32
+
+  public init(foreign_value: sink Builtin.i32) {
+    &self.value = foreign_value
+  }
+
+  public fun foreign_value() -> Builtin.i32 {
+    value
+  }
+
+}
