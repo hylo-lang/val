@@ -1,14 +1,19 @@
 //- typeCheck expecting: .success
 
-trait P: SemiRegular {
-  type T: SemiRegular
-  type U: SemiRegular
+// Our SemiRegular when this test was written wasn't the genuine
+// SemiRegular but was being depended on by this test, so rephrasing
+// it here.
+trait LegacySemiRegular: Deinitializable, Movable, Equatable {}
+
+trait P: LegacySemiRegular {
+  type T: LegacySemiRegular
+  type U: LegacySemiRegular
 
   fun t(_ x: T)
   fun u(_ x: U)
 }
 
-trait Q: SemiRegular {
+trait Q: LegacySemiRegular {
   type V: P
   property v: V { let }
 }

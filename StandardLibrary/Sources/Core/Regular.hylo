@@ -3,9 +3,9 @@
 ///
 /// - Move is value-preserving.
 /// - Destruction has no side-effects.
-public trait SemiRegular: Deinitializable, Movable, Equatable {}
+public trait SemiRegular: Copyable, Deinitializable {}
 
 /// Regular types (roughly per Stepanov).
 ///
 /// Copies have equal value.
-public trait Regular: SemiRegular, Copyable {}
+public trait Regular: SemiRegular, Equatable {}

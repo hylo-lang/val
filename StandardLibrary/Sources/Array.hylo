@@ -1,5 +1,5 @@
 /// An ordered, random-access collection.
-public type Array<Element: SemiRegular>: SemiRegular {
+public type Array<Element: Movable & Deinitializable>: Movable, Deinitializable {
 
   /// The out-of-line storage of the array.
   ///
@@ -207,7 +207,7 @@ public type Array<Element: SemiRegular>: SemiRegular {
 
 }
 
-public conformance Array: Equatable {
+public conformance Array: Equatable where Element: Equatable {
 
   /// Returns `true` iff `other` has an equivalent value.
   public fun infix== (_ other: Self) -> Bool {
