@@ -1,0 +1,74 @@
+/// A view presenting elements between two positions in a collection.
+public type MutatingSlice<Base: MutableCollection>: SemiRegular {
+
+  /// A pointer to the collection of which `self` is a slice.
+  private let base: PointerToMutable<Base>
+
+  /// The first position in `self`.
+  private let lower: Base.Position
+
+  /// The "past-the-end" position in `self`.
+  private let upper: Base.Position
+
+  /// Creates an instance with the given source.
+  memberwise init
+
+  /// Returns `true` iff `self` is equal to `other`.
+  public fun infix== (_ other: Self) -> Bool {
+    (self.base == other.base) && (self.lower == other.lower) && (self.upper == other.upper)
+  }
+
+  /// Projects a slice of `base` presenting its elements from `lower` to `upper`.
+  public static subscript of(
+    _ base: inout Base, from lower: sink Base.Position, to upper: sink Base.Position
+  ): Self {
+    let {
+      let instance = MutatingSlice<Base>(
+        base: mutable_pointer[to: &base].copy(),
+        lower: lower, upper: upper)
+      yield instance
+    }
+    inout {
+      var instance = MutatingSlice<Base>(
+        base: mutable_pointer[to: &base].copy(),
+        lower: lower, upper: upper)
+      yield &instance
+    }
+  }
+
+}
+
+public conformance MutatingSlice: MutableCollection {
+
+  public typealias Position = Base.Position
+
+  public typealias Element = Base.Element
+
+  public fun start_position() -> Base.Position {
+    lower.copy()
+  }
+
+  public fun end_position() -> Base.Position {
+    upper.copy()
+  }
+
+  public fun position(after p: Base.Position) -> Base.Position {
+    base.unsafe[].position(after: p)
+  }
+
+  public fun swap_at(_ p: Base.Position, _ q: Base.Position) inout {
+    &(base.unsafe[]).swap_at(p, q)
+  }
+
+  public subscript(_ p: Base.Position): Base.Element {
+    let {
+      let b = base.unsafe[]
+      yield b[p]
+    }
+    inout {
+      inout b = &(base.unsafe[])
+      yield &b[p]
+    }
+  }
+
+}
