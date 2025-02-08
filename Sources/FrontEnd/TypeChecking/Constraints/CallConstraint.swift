@@ -86,7 +86,7 @@ struct CallConstraint: Constraint, Hashable {
   func collectOpenVariables(in s: inout Set<TypeVariable>) {
     callee.collectOpenVariables(in: &s)
     output.collectOpenVariables(in: &s)
-    for i in 0 ..< arguments.count {
+    for i in 0..<arguments.count {
       arguments[i].type.collectOpenVariables(in: &s)
     }
   }
@@ -94,7 +94,7 @@ struct CallConstraint: Constraint, Hashable {
   mutating func modifyTypes(_ transform: (AnyType) -> AnyType) {
     update(&callee, with: transform)
     update(&output, with: transform)
-    for i in 0 ..< arguments.count {
+    for i in 0..<arguments.count {
       update(&arguments[i].type, with: transform)
     }
   }

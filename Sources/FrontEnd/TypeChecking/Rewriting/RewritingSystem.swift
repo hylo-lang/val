@@ -99,7 +99,7 @@ struct RewritingSystem<Term: RewritingTerm> {
   /// This method uses Knuth-Bendix completion algorithm to transform `self` into a terminating
   /// confluent system. The completion procedure is semi-decidable: it returns `true` if it
   /// succeeds or `false` if it suspects that it won't terminate.
-  mutating func complete(orderingTermsWith compareOrder: (Term, Term) -> StrictOrdering) -> Bool{
+  mutating func complete(orderingTermsWith compareOrder: (Term, Term) -> StrictOrdering) -> Bool {
     var visitedOverlaps = Set<OverlapIdentifier>()
     var pairs: [CriticalPair] = []
     var changed = true
@@ -128,7 +128,6 @@ struct RewritingSystem<Term: RewritingTerm> {
     leftSimplify()
     return true
   }
-
 
   /// Calls `action` on each overlap between two rules of the system.
   private func forEachOverlap(do action: (RuleID, RuleID, Term.Index) -> Void) {
@@ -232,7 +231,7 @@ struct RewritingSystem<Term: RewritingTerm> {
 
   /// Removes the rules in `self` whose left hand side can be reduced by a simpler rule.
   private mutating func leftSimplify() {
-    for i in 0 ..< rules.count where !rules[i].isSimplified {
+    for i in 0..<rules.count where !rules[i].isSimplified {
       for p in rules[i].lhs.indices {
         if simplify(i, lookingForTermsInSuffixFrom: p) { break }
       }
@@ -246,7 +245,7 @@ struct RewritingSystem<Term: RewritingTerm> {
     var n = termToRule[prefix: []]!
 
     for q in w[p...].indices {
-      if let m = n[prefix: w[q ..< w.index(after: q)]] {
+      if let m = n[prefix: w[q..<w.index(after: q)]] {
         if let j = m[[]], i != j {
           rules[i].raiseFlags(.isLeftSimplified)
           termToRule[rules[i].lhs] = nil

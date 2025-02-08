@@ -49,8 +49,7 @@ public struct SourceFile {
 
     let storage = Storage(fragment, lineStarts: wholeFile.lineStarts) {
       wholeFile.text[
-        wholeFile.index(line: startLine, column: 1)
-          ..< wholeFile.index(line: endLine + 1, column: 1)]
+        wholeFile.index(line: startLine, column: 1)..<wholeFile.index(line: endLine + 1, column: 1)]
     }
     self.storage = storage
   }
@@ -86,12 +85,12 @@ public struct SourceFile {
 
   /// A range covering the whole contents of this instance.
   public var wholeRange: SourceRange {
-    range(text.startIndex ..< text.endIndex)
+    range(text.startIndex..<text.endIndex)
   }
 
   /// Returns a range starting and ending at `index`.
   public func emptyRange(at index: String.Index) -> SourceRange {
-    range(index ..< index)
+    range(index..<index)
   }
 
   /// Returns the contents of the file in the specified range.
@@ -99,7 +98,7 @@ public struct SourceFile {
   /// - Requires: The bounds of `range` are valid positions in `self`.
   public subscript(_ range: SourceRange) -> Substring {
     precondition(range.file.url == url, "invalid range")
-    return text[range.startIndex ..< range.endIndex]
+    return text[range.startIndex..<range.endIndex]
   }
 
   /// Returns the position corresponding to `i` in `text`.
@@ -146,7 +145,7 @@ public struct SourceFile {
   /// The bounds of given `line`, including any trailing newline.
   public func bounds(of line: SourceLine) -> SourceRange {
     let end = line.number < lineStarts.count ? lineStarts[line.number] : text.endIndex
-    return range(lineStarts[line.number - 1] ..< end)
+    return range(lineStarts[line.number - 1]..<end)
   }
 
   /// Returns the 1-based line and column numbers corresponding to `i`.

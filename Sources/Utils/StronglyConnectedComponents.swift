@@ -24,7 +24,7 @@ public struct StronglyConnectedComponents<Vertex: Hashable> {
   /// Returns the strongly connected component containing `v`, calling `enumerateSuccessors` to
   /// obtain the successors of a vertex.
   public mutating func component(
-    containing v: Vertex, 
+    containing v: Vertex,
     enumeratingSuccessorsWith enumerateSuccessors: (Vertex) -> [Vertex]
   ) -> Int {
     if let c = properties[v]?.component { return c }
@@ -54,7 +54,7 @@ public struct StronglyConnectedComponents<Vertex: Hashable> {
           pw.isOnStack = false
           pw.component = c
         }
-        if (w == v) { break }
+        if w == v { break }
       }
     }
 

@@ -64,7 +64,8 @@ public struct TypedProgram {
     inParallel typeCheckingIsParallel: Bool = false,
     reportingDiagnosticsTo log: inout DiagnosticSet,
     tracingInferenceIf shouldTraceInference: ((AnyNodeID, TypedProgram) -> Bool)? = nil,
-    loggingRequirementSystemIf shouldLogRequirements: ((AnyDeclID, TypedProgram) -> Bool)? = nil
+    loggingRequirementSystemIf shouldLogRequirements: ((AnyDeclID, TypedProgram) -> Bool)? = nil,
+    profileWith profiler: ProfilingMeasurements? = nil
   ) throws {
     let instanceUnderConstruction = SharedMutable(TypedProgram(partiallyFormedFrom: base))
 
@@ -81,6 +82,8 @@ public struct TypedProgram {
         tasks.append(t)
       }
 
+      let probe = profiler?.createAndStartProfilingProbe(MeasurementType.TypeChecker)
+      defer { probe?.stop() }
       let queue = OperationQueue()
       queue.addOperations(tasks, waitUntilFinished: true)
       for t in tasks {
@@ -93,6 +96,8 @@ public struct TypedProgram {
         constructing: $0,
         tracingInferenceIf: typeCheckingIsParallel ? nil : shouldTraceInference,
         loggingRequirementSystemIf: typeCheckingIsParallel ? nil : shouldLogRequirements)
+      let probe = profiler?.createAndStartProfilingProbe(MeasurementType.TypeChecker)
+      defer { probe?.stop() }
       checker.checkAllDeclarations()
 
       log.formUnion(checker.diagnostics)
@@ -111,7 +116,8 @@ public struct TypedProgram {
     reportingDiagnosticsTo log: inout DiagnosticSet,
     tracingInferenceIf shouldTraceInference: ((AnyNodeID, TypedProgram) -> Bool)? = nil,
     loggingRequirementSystemIf shouldLogRequirements: ((AnyDeclID, TypedProgram) -> Bool)? = nil,
-    creatingContentsWith make: AST.ModuleLoader
+    creatingContentsWith make: AST.ModuleLoader,
+    profileWith profiler: ProfilingMeasurements? = nil
   ) throws -> (Self, ModuleDecl.ID) {
     let (p, m) = try base.loadModule(reportingDiagnosticsTo: &log, creatingContentsWith: make)
     var extended = self
@@ -121,6 +127,9 @@ public struct TypedProgram {
       constructing: extended,
       tracingInferenceIf: shouldTraceInference,
       loggingRequirementSystemIf: shouldLogRequirements)
+
+    let probe = profiler?.createAndStartProfilingProbe(MeasurementType.TypeChecker)
+    defer { probe?.stop() }
     checker.checkModule(m)
 
     log.formUnion(checker.diagnostics)

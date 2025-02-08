@@ -270,7 +270,7 @@ struct Emitter {
     // Convert Hylo arguments to their foreign representation. Note that the last parameter of the
     // entry is the address of the FFI's return value.
     var arguments: [Operand] = []
-    for i in 0 ..< module[entry].inputs.count - 1 {
+    for i in 0..<module[entry].inputs.count - 1 {
       let a = emitConvertToForeign(.parameter(entry, i), at: site)
       arguments.append(a)
     }
@@ -2244,7 +2244,7 @@ struct Emitter {
     let r = emitLValue(receiver: s, at: ast[callee].site)
     return emitMemberFunctionCallee(
       referringTo: d, memberOf: r, markedForMutation: isMutating,
-      specializedBy: a, in:program[callee].scope,
+      specializedBy: a, in: program[callee].scope,
       at: program[callee].site)
   }
 
@@ -2367,7 +2367,6 @@ struct Emitter {
     let c = insert(module.makeAccess(entityToCall.capabilities, from: r, at: ast[callee].site))!
     return (entityToCall, [c])
   }
-
 
   /// Returns `(success: a, failure: b)` where `a` is the basic block reached if all items in
   /// `condition` hold and `b` is the basic block reached otherwise, creating new basic blocks

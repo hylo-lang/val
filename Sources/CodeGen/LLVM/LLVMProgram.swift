@@ -13,6 +13,8 @@ public struct LLVMProgram {
   /// The LLVM modules in the program.
   public private(set) var llvmModules: [ModuleDecl.ID: SwiftyLLVM.Module] = [:]
 
+  let profiler: ProfilingMeasurements?
+
   /// Creates a transpiling `ir`, whose main module is `mainModule`, for `target`.
   ///
   /// - Parameters:
@@ -20,11 +22,16 @@ public struct LLVMProgram {
   public init(
     _ ir: IR.Program,
     mainModule: ModuleDecl.ID,
-    for target: SwiftyLLVM.TargetMachine? = nil
+    for target: SwiftyLLVM.TargetMachine? = nil,
+    profileWith profiler: ProfilingMeasurements?
   ) throws {
+    self.profiler = profiler
     self.target = try target ?? SwiftyLLVM.TargetMachine(for: .host())
     for m in ir.modules.keys {
       var context = CodeGenerationContext(forCompiling: m, of: ir)
+      let probe = profiler?.createAndStartProfilingProbe(MeasurementType.IRConversion)
+      defer { probe?.stop() }
+
       let transpilation = SwiftyLLVM.Module(transpiling: m, in: &context)
       do {
         try transpilation.verify()
@@ -38,6 +45,8 @@ public struct LLVMProgram {
 
   /// Applies the mandatory IR simplification passes on each module in `self`.
   public mutating func applyMandatoryPasses() {
+    let probe = profiler?.createAndStartProfilingProbe(MeasurementType.MandatoryPass)
+    defer { probe?.stop() }
     for k in llvmModules.keys {
       llvmModules[k]!.runDefaultModulePasses(optimization: .none, for: target)
     }
@@ -47,6 +56,8 @@ public struct LLVMProgram {
   ///
   /// Optimization applied are similar to clang's `-O3`.
   public mutating func optimize() {
+    let probe = profiler?.createAndStartProfilingProbe(MeasurementType.Optimizations)
+    defer { probe?.stop() }
     for k in llvmModules.keys {
       llvmModules[k]!.runDefaultModulePasses(optimization: .aggressive, for: target)
     }
@@ -63,6 +74,8 @@ public struct LLVMProgram {
     var result: [URL] = []
     for m in llvmModules.values {
       let f = directory.appendingPathComponent(m.name).appendingPathExtension("o")
+      let probe = profiler?.createAndStartProfilingProbe(MeasurementType.EmitPhase)
+      defer { probe?.stop() }
       try m.write(type, for: target, to: f.fileSystemPath)
       result.append(f)
     }

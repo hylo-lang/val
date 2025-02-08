@@ -1040,7 +1040,7 @@ struct ConstraintSystem {
 
   /// Refresh stale constraints containing variables that have been assigned.
   private mutating func refresh() {
-    for i in (0 ..< stale.count).reversed() {
+    for i in (0..<stale.count).reversed() {
       var changed = false
       goals[stale[i]].modifyTypes { (t) in
         if t[.hasVariable] {

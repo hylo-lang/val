@@ -1,4 +1,3 @@
-
 extension Diagnostic {
 
   static func error(ambiguousDisjunctionAt site: SourceRange) -> Diagnostic {

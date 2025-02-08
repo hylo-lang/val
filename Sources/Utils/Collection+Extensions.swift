@@ -59,7 +59,7 @@ extension Collection {
       j = i + 1
     }
 
-    return candidates[0 ..< end].map({ self[$0] })
+    return candidates[0..<end].map({ self[$0] })
   }
 
 }

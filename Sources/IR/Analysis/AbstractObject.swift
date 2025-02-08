@@ -74,7 +74,7 @@ struct AbstractObject<Domain: AbstractDomain>: Equatable {
       // Compute the canonical form of each part and unify if possible.
       subobjects[0] = subobjects[0].canonical
       var partsAreUniform = subobjects[0].isUniform
-      for i in 1 ..< subobjects.count {
+      for i in 1..<subobjects.count {
         subobjects[i] = subobjects[i].canonical
         partsAreUniform = partsAreUniform && subobjects[i] == subobjects[0]
       }

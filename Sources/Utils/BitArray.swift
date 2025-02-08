@@ -75,7 +75,7 @@ public struct BitArray {
     if isEmpty { return true }
 
     let k = (count - 1) >> UInt.bitWidth.trailingZeroBitCount
-    for i in 0 ..< k {
+    for i in 0..<k {
       if bits[i] != 0 { return false }
     }
     let m = (1 as UInt) << (count & (UInt.bitWidth - 1)) - 1
@@ -87,7 +87,7 @@ public struct BitArray {
     if isEmpty { return true }
 
     let k = (count - 1) >> UInt.bitWidth.trailingZeroBitCount
-    for i in 0 ..< k {
+    for i in 0..<k {
       if bits[i] != ~(0 as UInt) { return false }
     }
     let m = (1 as UInt) << (count & (UInt.bitWidth - 1)) - 1
@@ -195,7 +195,7 @@ public struct BitArray {
     if isEmpty { return }
 
     let k = (count - 1) >> UInt.bitWidth.trailingZeroBitCount
-    for i in 0 ..< k {
+    for i in 0..<k {
       bits[i] = operation(bits[i], other.bits[i])
     }
     let m = (1 as UInt) << (count & (UInt.bitWidth - 1)) - 1

@@ -41,7 +41,7 @@ struct OverloadConstraint: DisjunctiveConstraintProtocol, Hashable {
   mutating func modifyTypes(_ transform: (AnyType) -> AnyType) {
     update(&overloadedExprType, with: transform)
 
-    for i in 0 ..< choices.count {
+    for i in 0..<choices.count {
       let modified = choices[i].constraints.reduce(into: ConstraintSet()) { (cs, c) in
         var newConstraint = c
         newConstraint.modifyTypes(transform)
