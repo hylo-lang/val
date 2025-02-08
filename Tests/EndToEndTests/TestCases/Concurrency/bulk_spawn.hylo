@@ -1,0 +1,18 @@
+//- compileToLLVM expecting: success
+
+fun test_bulk_spawn() {
+  var f = spawn_(count: 10, action: fun(index: Int) -> Void {
+      print("Hello, from humble minion ", terminator: "")
+      print(index)
+    })
+  f.await()
+}
+
+public fun main() {
+  print("Starting...")
+  test_bulk_spawn()
+  print("Finishing...")
+}
+
+// Compile this with:
+// > hc mutating_spawn.hylo -l concore2full -l context_core_api -l boost_context -l c++ -L <path-to-concore2full> -L <path-to-boost>
