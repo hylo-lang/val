@@ -1,5 +1,5 @@
-/// A half-open interval from a lower bound up to, but not including, an uppor bound.
-public type Range<Bound: SemiRegular & Comparable> {
+/// A half-open interval from a lower bound up to, but not including, an upper bound.
+public type Range<Bound: SemiRegular> {
 
   // TODO: private(set)
   /// The minimum value included in `self`.
@@ -13,17 +13,24 @@ public type Range<Bound: SemiRegular & Comparable> {
   memberwise init
 
   /// Creates a half-open interval [`lower_bound`, `upper_bound`).
-  ///
-  /// - Requires: `lower_bound <= upper_bound`.
+  /// - Requires: `lower_bound <= upper_bound` if `Bound` models `Comparable`.
   public init(from lower_bound: sink Bound, up_to upper_bound: sink Bound) {
-    // precondition(lower_bound <= upper_bound)
     &self.lower_bound = lower_bound
     &self.upper_bound = upper_bound
   }
 
-  /// Returns `true` iff `element` is contained in `self`.
-  public fun contains(_ element: Bound) -> Bool {
-    (element >= lower_bound) && (element < upper_bound)
+  /// Returns true iff `lower_bound == upper_bound`.
+  public fun is_empty() -> Bool {
+    lower_bound == upper_bound
+  }
+
+}
+
+public extension Range where Bound: Comparable {
+
+  /// Returns `true` iff `x` is contained in `self`.
+  public fun contains(_ x: Bound) -> Bool {
+    (x >= lower_bound) && (x < upper_bound)
   }
 
   /// Returns `true` iff `other` is contained in `self`.
