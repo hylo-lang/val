@@ -239,12 +239,23 @@ struct ConstraintSystem {
   }
 
   /// Returns eiteher `.success` if `g.left` is unifiable with `g.right` or `.failure` otherwise.
-  private mutating func solve(equality g: GoalIdentity) -> Outcome {
+  private mutating func solve(equality g: GoalIdentity) -> Outcome? {
     let goal = goals[g] as! EqualityConstraint
-    if solve(goal.left, equals: goal.right) {
+    return solve(goal.left, equals: goal.right, for: g, failure: { $0.failureToSolve(goal) })
+  }
+
+  private mutating func solve(
+    _ l: AnyType, equals r: AnyType, for g: GoalIdentity,
+    failure: (inout Self) -> DiagnoseFailure
+  ) -> Outcome? {
+    switch solve(l, equals: r) {
+    case .some(true):
       return .success
-    } else {
-      return .failure(failureToSolve(goal))
+    case .some(false):
+      return .failure(failure(&self))
+    case .none:
+      postpone(g)
+      return nil
     }
   }
 
@@ -294,7 +305,7 @@ struct ConstraintSystem {
     case (_, let r as UnionType):
       // If `R` is an empty union, so must be `L`.
       if r.elements.isEmpty {
-        return solve(goal.left, equals: goal.right) ? .success : .failure(failureToSolve(goal))
+        return matches(goal.left, goal.right) ? .success : .failure(failureToSolve(goal))
       }
 
       // If `R` has a single element, it must be above (the canonical form of) `L`.
@@ -344,7 +355,7 @@ struct ConstraintSystem {
       // coercible to `R` and that are above `L`, but that set is unbounded unless `R` is a leaf.
       // If it isn't, we have no choice but to postpone the goal.
       if goal.right.isLeaf {
-        return solve(goal.left, equals: goal.right) ? .success : .failure(failureToSolve(goal))
+        return solve(goal.left, equals: goal.right, for: g, failure: { $0.failureToSolve(goal) })
       } else if goal.isStrict {
         postpone(g)
         return nil
@@ -416,7 +427,7 @@ struct ConstraintSystem {
       } else if goal.isStrict {
         return .failure(failureToSolve(goal))
       } else {
-        return solve(goal.left, equals: goal.right) ? .success : .failure(failureToSolve(goal))
+        return solve(goal.left, equals: goal.right, for: g, failure: { $0.failureToSolve(goal) })
       }
     }
   }
@@ -882,8 +893,18 @@ struct ConstraintSystem {
   /// Type unification consists of finding substitutions that makes `lhs` and `rhs` equal. Both
   /// types are visited in lockstep, updating `self.subscritutions` every time either side is a
   /// variable for which no substitution has been made yet.
-  private mutating func solve(_ lhs: AnyType, equals rhs: AnyType) -> Bool {
-    matches(lhs, rhs)
+  private mutating func solve(_ lhs: AnyType, equals rhs: AnyType) -> ThreeValuedBit {
+    let t = checker.canonical(substitutions[lhs], in: scope)
+    let u = checker.canonical(substitutions[rhs], in: scope)
+    if !isUnifiable(t) || !isUnifiable(u) {
+      return .none
+    } else {
+      return .some(matches(t, u))
+    }
+  }
+
+  private func isUnifiable(_ t: AnyType) -> Bool {
+    t.isCanonical && AssociatedTypeType(t).map(default: true, \.root.isVariable)
   }
 
   /// Returns `true` iff `lhs` and `rhs` can be unified.
@@ -904,7 +925,7 @@ struct ConstraintSystem {
       return unify(l, r)
 
     case _ where !t.isCanonical || !u.isCanonical:
-      return solve(checker.canonical(t, in: scope), equals: checker.canonical(u, in: scope))
+      return matches(checker.canonical(t, in: scope), checker.canonical(u, in: scope))
 
     default:
       return checker.areEquivalent(t, u, in: scope)
@@ -917,7 +938,7 @@ struct ConstraintSystem {
   ) -> Bool {
     for a in lhs.elements {
       var success = false
-      for b in rhs.elements where solve(a, equals: b) {
+      for b in rhs.elements where matches(a, b) {
         success = true
       }
       if !success { return false }
