@@ -111,8 +111,9 @@ extension SourceRange: CustomStringConvertible {
     if end.line == start.line {
       return head + "-\(end.column)"
     }
-    return head + "-\(end.line):\(end.column)"
+    return head + "-\(end.line).\(end.column)"
   }
+  
 
   public var description: String { gnuStandardText }
 
