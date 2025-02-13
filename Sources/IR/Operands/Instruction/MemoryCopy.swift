@@ -9,8 +9,14 @@ public struct MemoryCopy: Instruction {
   /// The site of the code corresponding to that instruction.
   public let site: SourceRange
 
-  /// Creates an instance with the given properties.
-  fileprivate init(source: Operand, target: Operand, site: SourceRange) {
+  /// Creates an `memory_copy` anchored at `site` that copies the memory representation of the
+  /// value stored at `source` to `target`.
+  ///
+  /// - Requires: `source` is a `let`-capable access and `target` is a `set`-capable access.
+  ///   `source` and `target` have the same type.
+  public init(_ source: Operand, _ target: Operand, at site: SourceRange, in m: Module) {
+    let s = m.type(of: source)
+    precondition(s.isAddress && (s == m.type(of: target)))
     self.operands = [source, target]
     self.site = site
   }
@@ -23,21 +29,6 @@ public struct MemoryCopy: Instruction {
 
   public mutating func replaceOperand(at i: Int, with new: Operand) {
     operands[i] = new
-  }
-
-}
-
-extension Module {
-
-  /// Creates an `memory_copy` anchored at `site` that copies the memory representation of the
-  /// value stored at `source` to `target`.
-  ///
-  /// - Requires: `source` is a `let`-capable access and `target` is a `set`-capable access.
-  ///   `source` and `target` have the same type.
-  func makeMemoryCopy(_ source: Operand, _ target: Operand, at site: SourceRange) -> MemoryCopy {
-    let s = self.type(of: source)
-    precondition(s.isAddress && (s == self.type(of: target)))
-    return .init(source: source, target: target, site: site)
   }
 
 }

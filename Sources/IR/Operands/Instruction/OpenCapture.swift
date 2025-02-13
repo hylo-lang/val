@@ -15,9 +15,10 @@ public struct OpenCapture: RegionEntry {
   /// The site of the code corresponding to that instruction.
   public let site: SourceRange
 
-  /// Creates an instance with the given properties.
-  fileprivate init(result: IR.`Type`, source: Operand, site: SourceRange) {
-    self.result = result
+  /// Creates an `open_capture` anchored at `site` that loads the address stored at `source`.
+  public init(_ source: Operand, at site: SourceRange, in m: Module) {
+    let t = RemoteType(m.type(of: source).ast) ?? preconditionFailure()
+    self.result = .address(t.bareType)
     self.operands = [source]
     self.site = site
   }
@@ -29,16 +30,6 @@ public struct OpenCapture: RegionEntry {
 
   public mutating func replaceOperand(at i: Int, with new: Operand) {
     operands[0] = new
-  }
-
-}
-
-extension Module {
-
-  /// Creates an `open_capture` anchored at `site` that loads the address stored at `source`.
-  func makeOpenCapture(_ source: Operand, at site: SourceRange) -> OpenCapture {
-    let t = RemoteType(type(of: source).ast) ?? preconditionFailure()
-    return .init(result: .address(t.bareType), source: source, site: site)
   }
 
 }

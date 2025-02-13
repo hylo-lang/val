@@ -12,12 +12,16 @@ public struct AdvancedByBytes: Instruction {
   /// The site of the code corresponding to that instruction.
   public let site: SourceRange
 
-  /// Creates an instance with the given properties.
-  fileprivate init(
+  /// Creates an `advanced by bytes` instruction anchored at `site` computing the `source` address
+  /// value advanced by `offset` bytes.
+  public init(
     source: Operand,
     offset: Operand,
-    site: SourceRange
+    at site: SourceRange,
+    in m: Module
   ) {
+    precondition(m.type(of: source).isAddress)
+    precondition(m.type(of: offset).isAddress)
     self.base = source
     self.byteOffset = offset
     self.site = site
@@ -42,23 +46,6 @@ extension AdvancedByBytes: CustomStringConvertible {
 
   public var description: String {
     "\(base) advanced by \(byteOffset) bytes"
-  }
-
-}
-
-extension Module {
-
-  /// Creates an `advanced by bytes` instruction anchored at `site` computing the `source` address
-  /// value advanced by `offset` bytes.
-  func makeAdvancedByBytes(
-    source: Operand, offset: Operand, at site: SourceRange
-  ) -> AdvancedByBytes {
-    precondition(type(of: source).isAddress)
-    precondition(type(of: offset).isAddress)
-    return .init(
-      source: source,
-      offset: offset,
-      site: site)
   }
 
 }

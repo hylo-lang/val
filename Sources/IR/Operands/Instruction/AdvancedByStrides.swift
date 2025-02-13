@@ -18,16 +18,20 @@ public struct AdvancedByStrides: Instruction {
   /// The site of the code corresponding to that instruction.
   public let site: SourceRange
 
-  /// Creates an instance with the given properties.
-  fileprivate init(
-    source: Operand,
-    offset: Int,
-    result: IR.`Type`,
-    site: SourceRange
+  /// Creates an `advanced by strides` instruction anchored at `site` computing the `source`
+  /// address advanced by `n` strides of its referred type.
+  public init(
+    _ source: Operand,
+    offset n: Int,
+    at site: SourceRange,
+    in m: Module
   ) {
+    guard let b = m.sourceType(source) else {
+      preconditionFailure("source must be the address of a buffer")
+    }
     self.base = source
-    self.offset = offset
-    self.result = result
+    self.offset = n
+    self.result = .address(b.element)
     self.site = site
   }
 
@@ -52,20 +56,8 @@ extension AdvancedByStrides: CustomStringConvertible {
 
 extension Module {
 
-  /// Creates an `advanced by strides` instruction anchored at `site` computing the `source`
-  /// address advanced by `n` strides of its referred type.
-  func makeAdvanced(
-    _ source: Operand, byStrides n: Int, at site: SourceRange
-  ) -> AdvancedByStrides {
-    guard let b = sourceType(source) else {
-      preconditionFailure("source must be the address of a buffer")
-    }
-
-    return .init(source: source, offset: n, result: .address(b.element), site: site)
-  }
-
   /// Returns the AST type of `source` iff it is the address of a buffer.
-  private func sourceType(_ source: Operand) -> BufferType? {
+  fileprivate func sourceType(_ source: Operand) -> BufferType? {
     let s = type(of: source)
     if s.isAddress {
       return BufferType(s.ast)

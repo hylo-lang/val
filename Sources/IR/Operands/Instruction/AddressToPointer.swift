@@ -12,8 +12,9 @@ public struct AddressToPointer: Instruction {
   /// The site of the code corresponding to that instruction.
   public let site: SourceRange
 
-  /// Creates an instance with the given properties.
-  fileprivate init(source: Operand, site: SourceRange) {
+  /// Creates an `address_to_pointer` anchored at `site` that converts `source` to a built-in
+  /// pointer value.
+  public init(_ source: Operand, at site: SourceRange, in module: Module) {
     self.source = source
     self.site = site
   }
@@ -29,16 +30,6 @@ public struct AddressToPointer: Instruction {
   public mutating func replaceOperand(at i: Int, with new: Operand) {
     precondition(i == 0)
     source = new
-  }
-
-}
-
-extension Module {
-
-  /// Creates an `address_to_pointer` anchored at `site` that converts `source` to a built-in
-  /// pointer value.
-  func makeAddressToPointer(_ source: Operand, at site: SourceRange) -> AddressToPointer {
-    .init(source: source, site: site)
   }
 
 }

@@ -29,16 +29,20 @@ public struct Access: RegionEntry {
   /// The site of the code corresponding to that instruction.
   public let site: SourceRange
 
-  /// Creates an instance with the given properties.
-  fileprivate init(
-    capabilities: AccessEffectSet,
-    accessedType: AnyType,
-    source: Operand,
-    binding: VarDecl.ID?,
-    site: SourceRange
+  /// Creates an `access` anchored at `site` that may take any of `capabilities` from `source`,
+  /// optionally associated with a variable declaration in the AST.
+  public init(
+    _ capabilities: AccessEffectSet,
+    from source: Operand,
+    correspondingTo binding: VarDecl.ID? = nil,
+    at site: SourceRange,
+    in module: Module
   ) {
+    precondition(!capabilities.isEmpty)
+    let sourceType = module.type(of: source)
+    precondition(sourceType.isAddress)
     self.capabilities = capabilities
-    self.accessedType = accessedType
+    self.accessedType = sourceType.ast
     self.source = source
     self.binding = binding
     self.site = site
@@ -67,33 +71,17 @@ extension Access: CustomStringConvertible {
 
 }
 
-extension Module {
-
-  /// Creates an `access` anchored at `site` that may take any of `capabilities` from `source`,
-  /// optionally associated with a variable declaration in the AST.
-  func makeAccess(
-    _ capabilities: AccessEffectSet, from source: Operand,
-    correspondingTo binding: VarDecl.ID? = nil,
-    at site: SourceRange
-  ) -> Access {
-    precondition(!capabilities.isEmpty)
-    precondition(type(of: source).isAddress)
-    return .init(
-      capabilities: capabilities,
-      accessedType: type(of: source).ast,
-      source: source,
-      binding: binding,
-      site: site)
-  }
+extension Access {
 
   /// Creates an `access` anchored at `site` that takes `capability` from `source`, optionally
   /// associated with a variable declaration in the AST.
-  func makeAccess(
+  init(
     _ capability: AccessEffect, from source: Operand,
     correspondingTo binding: VarDecl.ID? = nil,
-    at site: SourceRange
-  ) -> Access {
-    makeAccess([capability], from: source, correspondingTo: binding, at: site)
+    at site: SourceRange,
+    in module: Module
+  ) {
+    self.init([capability], from: source, correspondingTo: binding, at: site, in: module)
   }
 
 }

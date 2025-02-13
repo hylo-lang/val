@@ -9,10 +9,11 @@ public struct RegionExit<Entry: RegionEntry> {
   /// The site of the code corresponding to that instruction.
   public let site: SourceRange
 
-  /// Creates an instance with the given properties.
-  fileprivate init(start: Operand, site: SourceRange) {
+  /// Creates a region exit anchored at `site` marking an exit of the regions started by `start`.
+  public init(_ start: Operand, at anchor: SourceRange, in m: Module) {
+    precondition(start.instruction.map({ m[$0] is Entry }) ?? false)
     self.operands = [start]
-    self.site = site
+    self.site = anchor
   }
 
   /// The exited region.
@@ -39,18 +40,6 @@ extension RegionExit: CustomStringConvertible {
     default:
       return "end_region \(start)"
     }
-  }
-
-}
-
-extension Module {
-
-  /// Creates a region exit anchored at `site` marking an exit of the regions started by `start`.
-  func makeRegionExit<Entry: RegionEntry>(
-    _ start: Operand, at anchor: SourceRange
-  ) -> RegionExit<Entry> {
-    precondition(start.instruction.map({ self[$0] is Entry }) ?? false)
-    return .init(start: start, site: anchor)
   }
 
 }

@@ -10,8 +10,10 @@ public struct ReleaseCaptures: Instruction {
   /// The site of the code corresponding to that instruction.
   public let site: SourceRange
 
-  /// Creates an instance with the given properties.
-  fileprivate init(container: Operand, site: SourceRange) {
+  /// Creates a `release_capture` anchored at `site` that releases the accesses previously captured
+  /// in `container`.
+  init(_ container: Operand, at site: SourceRange, in module: Module) {
+    precondition(container.instruction.map({ module[$0] is AllocStack }) ?? false)
     self.operands = [container]
     self.site = site
   }
@@ -21,17 +23,6 @@ public struct ReleaseCaptures: Instruction {
 
   public mutating func replaceOperand(at i: Int, with new: Operand) {
     operands[i] = new
-  }
-
-}
-
-extension Module {
-
-  /// Creates a `release_capture` anchored at `site` that releases the accesses previously captured
-  /// in `container`.
-  func makeReleaseCapture(_ container: Operand, at site: SourceRange) -> ReleaseCaptures {
-    precondition(container.instruction.map({ self[$0] is AllocStack }) ?? false)
-    return .init(container: container, site: site)
   }
 
 }

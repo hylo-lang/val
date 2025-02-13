@@ -16,16 +16,20 @@ public struct CallFFI: Instruction {
   /// The site of the code corresponding to that instruction.
   public let site: SourceRange
 
-  /// Creates an instance with the given properties.
-  fileprivate init(
-    returnType: IR.`Type`,
-    callee: String,
-    arguments: [Operand],
-    site: SourceRange
+  /// Creates a `call_ffi` anchored at `site` that applies `callee` on `arguments` using to return
+  /// and returns a value of `returnType`.
+  public init(
+    returning returnType: IR.`Type`, 
+    applying callee: String, 
+    to arguments: [Operand],
+    at site: SourceRange, 
+    in m: Module
   ) {
+    precondition(returnType.isObject)
+    precondition(arguments.allSatisfy({ m[$0] is Load }))
     self.returnType = returnType
     self.callee = callee
-    self.operands = arguments
+    self.operands = arguments 
     self.site = site
   }
 
@@ -44,26 +48,6 @@ extension CallFFI: CustomStringConvertible {
   public var description: String {
     let s = "call_ffi \(callee)"
     return operands.isEmpty ? s : "\(s), \(list: operands)"
-  }
-
-}
-
-extension Module {
-
-  /// Creates a `call_ffi` anchored at `site` that applies `callee` on `arguments` using to return
-  /// and returns a value of `returnType`.
-  ///
-  /// - Parameters:
-  ///   - returnType: The return type of the callee.
-  ///   - callee: The name of the foreign function to call
-  ///   - arguments: The arguments of the call.
-  func makeCallFFI(
-    returning returnType: IR.`Type`, applying callee: String, to arguments: [Operand],
-    at site: SourceRange
-  ) -> CallFFI {
-    precondition(returnType.isObject)
-    precondition(arguments.allSatisfy({ self[$0] is Load }))
-    return .init(returnType: returnType, callee: callee, arguments: arguments, site: site)
   }
 
 }

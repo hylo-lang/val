@@ -24,20 +24,32 @@ public struct ProjectBundle: Instruction {
   /// The site of the code corresponding to that instruction.
   public let site: SourceRange
 
-  /// Creates an instance with the given properties.
-  fileprivate init(
-    bundle: BundleReference<SubscriptDecl>,
-    variants: [AccessEffect: Function.ID],
-    parameters: [ParameterType],
-    projection: AnyType,
-    operands: [Operand],
-    site: SourceRange
+  /// Creates a `project_bundle` that applies one of the variants defined in `m` to arguments `a`,
+  /// canonicalizing types in `scopeOfUse`.
+  public init(
+    applying m: BundleReference<SubscriptDecl>,
+    to a: [Operand],
+    at site: SourceRange,
+    in module: inout Module,
+    canonicalizingTypesIn scopeOfUse: AnyScopeID
   ) {
-    self.bundle = bundle
+    var variants: [AccessEffect: Function.ID] = [:]
+    for v in module.program[m.bundle].impls {
+      let i = module.program[v].introducer.value
+      if m.capabilities.contains(i) {
+        variants[i] = module.demandDeclaration(lowering: v)
+      }
+    }
+    precondition(!variants.isEmpty)
+
+    let t = SubscriptType(
+      module.program.canonicalType(of: m.bundle, specializedBy: m.arguments, in: scopeOfUse))!.pure
+
+    self.bundle = m
     self.variants = variants
-    self.parameters = parameters
-    self.projection = projection
-    self.operands = operands
+    self.parameters = t.inputs.lazy.map({ ParameterType($0.type)! })
+    self.projection = RemoteType(t.output)!.bareType
+    self.operands = a
     self.site = site
   }
 
@@ -65,36 +77,6 @@ extension ProjectBundle: CustomStringConvertible {
     } else {
       return "project_bundle \(capabilities) \(bundle), \(list: operands)"
     }
-  }
-
-}
-
-extension Module {
-
-  /// Creates a `project_bundle` anchored at `site` that applies one of the variants defined in `m`
-  /// to arguments `a`, canonicalizing types in `scopeOfUse`.
-  mutating func makeProjectBundle(
-    applying m: BundleReference<SubscriptDecl>, to a: [Operand],
-    at site: SourceRange,
-    canonicalizingTypesIn scopeOfUse: AnyScopeID
-  ) -> ProjectBundle {
-    var variants: [AccessEffect: Function.ID] = [:]
-    for v in program[m.bundle].impls {
-      let i = program[v].introducer.value
-      if m.capabilities.contains(i) {
-        variants[program[v].introducer.value] = demandDeclaration(lowering: v)
-      }
-    }
-    precondition(!variants.isEmpty)
-
-    let t = SubscriptType(
-      program.canonicalType(of: m.bundle, specializedBy: m.arguments, in: scopeOfUse))!.pure
-
-    return .init(
-      bundle: m, variants: variants,
-      parameters: t.inputs.lazy.map({ ParameterType($0.type)! }),
-      projection: RemoteType(t.output)!.bareType,
-      operands: a, site: site)
   }
 
 }

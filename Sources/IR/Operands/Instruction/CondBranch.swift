@@ -15,13 +15,23 @@ public struct CondBranch: Terminator {
   /// The site of the code corresponding to that instruction.
   public let site: SourceRange
 
-  /// Creates an instance with the given properties.
-  fileprivate init(
-    condition: Operand,
-    targetIfTrue: Block.ID,
-    targetIfFalse: Block.ID,
-    site: SourceRange
+  /// Creates a `cond_branch` anchored at `site` that jumps to `targetIfTrue` if `condition` is
+  /// true or `targetIfFalse` otherwise.
+  ///
+  /// - Parameters:
+  ///   - condition: The condition tested to select the jump destination. Must a built-in `i1`
+  ///     object.
+  ///   - targetIfTrue: The block in which control flow jumps if `condition` is true.
+  ///   - targetIfFalse: The block in which control flow jumps if `condition` is false.
+  public init(
+    if condition: Operand,
+    then targetIfTrue: Block.ID,
+    else targetIfFalse: Block.ID,
+    at site: SourceRange,
+    in m: Module
   ) {
+    precondition(m.type(of: condition) == .object(BuiltinType.i(1)))
+    precondition(targetIfTrue.function == targetIfFalse.function)
     self.condition = condition
     self.targetIfTrue = targetIfTrue
     self.targetIfFalse = targetIfFalse
@@ -58,33 +68,6 @@ extension CondBranch: CustomStringConvertible {
 
   public var description: String {
     "cond_branch \(condition), \(targetIfTrue), \(targetIfFalse)"
-  }
-
-}
-
-extension Module {
-
-  /// Creates a `cond_branch` anchored at `site` that jumps to `targetIfTrue` if `condition` is
-  /// true or `targetIfFalse` otherwise.
-  ///
-  /// - Parameters:
-  ///   - condition: The condition tested to select the jump destination. Must a built-in `i1`
-  ///     object.
-  ///   - targetIfTrue: The block in which control flow jumps if `condition` is true.
-  ///   - targetIfFalse: The block in which control flow jumps if `condition` is false.
-  func makeCondBranch(
-    if condition: Operand,
-    then targetIfTrue: Block.ID,
-    else targetIfFalse: Block.ID,
-    at site: SourceRange
-  ) -> CondBranch {
-    precondition(type(of: condition) == .object(BuiltinType.i(1)))
-    precondition(targetIfTrue.function == targetIfFalse.function)
-    return .init(
-      condition: condition,
-      targetIfTrue: targetIfTrue,
-      targetIfFalse: targetIfFalse,
-      site: site)
   }
 
 }

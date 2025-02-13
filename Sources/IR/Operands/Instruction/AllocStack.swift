@@ -9,9 +9,10 @@ public struct AllocStack: Instruction {
   /// The site of the code corresponding to that instruction.
   public let site: SourceRange
 
-  /// Creates an instance with the given properties.
-  fileprivate init(allocatedType: AnyType, site: SourceRange) {
-    self.allocatedType = allocatedType
+  /// Creates an `alloc_stack` anchored at `site` that allocates storage of type `t`.
+  public init(_ t: AnyType, at site: SourceRange, in m: Module) {
+    precondition(t.isCanonical)
+    self.allocatedType = t
     self.site = site
   }
 
@@ -29,18 +30,6 @@ extension AllocStack: CustomStringConvertible {
 
   public var description: String {
     "alloc_stack \(allocatedType)"
-  }
-
-}
-
-extension Module {
-
-  /// Creates an `alloc_stack` anchored at `site` that allocates storage of type `t`.
-  ///
-  /// - Requires: `t` is canonical.
-  func makeAllocStack(_ t: AnyType, at site: SourceRange) -> AllocStack {
-    precondition(t.isCanonical)
-    return .init(allocatedType: t, site: site)
   }
 
 }

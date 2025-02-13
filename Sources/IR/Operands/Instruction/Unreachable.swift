@@ -6,13 +6,8 @@ public struct Unreachable: Terminator {
   /// The site of the code corresponding to that instruction.
   public var site: SourceRange
 
-  /// Creates an instance with the given properties.
-  fileprivate init(site: SourceRange) {
-    self.site = site
-  }
-
-  /// Creates an instance anchored at `site` that marks the execution path unreachable.
-  init(at site: SourceRange) {
+  /// Creates an instance in `m` with the given properties.
+  init(at site: SourceRange, in m: Module) {
     self.site = site
   }
 
@@ -24,15 +19,6 @@ public struct Unreachable: Terminator {
 
   func replaceSuccessor(_ old: Block.ID, with new: Block.ID) -> Bool {
     false
-  }
-
-}
-
-extension Module {
-
-  /// Creates an `unreachable` anchored at `site` that marks the execution path unreachable.
-  func makeUnreachable(at site: SourceRange) -> Unreachable {
-    .init(site: site)
   }
 
 }

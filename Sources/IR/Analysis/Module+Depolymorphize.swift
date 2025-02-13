@@ -64,8 +64,9 @@ extension IR.Program {
 
     let g = monomorphize(callee, usedIn: modules[m]!.scope(containing: i))
     let r = FunctionReference(to: g, in: modules[m]!)
-    let new = modules[m]!.makeCall(
-      applying: .constant(r), to: Array(s.arguments), writingResultTo: s.output, at: s.site)
+    let new = Call(
+      applying: .constant(r), to: Array(s.arguments),
+      writingResultTo: s.output, at: s.site, in: modules[m]!)
     modules[m]!.replace(i, with: new)
   }
 
@@ -81,8 +82,8 @@ extension IR.Program {
 
     let z = base.canonical(s.specialization, in: modules[m]!.scope(containing: i))
     let g = monomorphize(s.callee, for: z, usedIn: modules[m]!.scope(containing: i))
-    let new = modules[m]!.makeProject(
-      s.projection, applying: g, specializedBy: .empty, to: s.operands, at: s.site)
+    let new = Project(
+      s.projection, applying: g, specializedBy: .empty, to: s.operands, at: s.site, in: modules[m]!)
     modules[m]!.replace(i, with: new)
   }
 
@@ -184,9 +185,9 @@ extension IR.Program {
       let s = modules[source]![i] as! Return
       let j = modify(&modules[target]!) { (m) in
         for i in rewrittenGenericValue.values.reversed() {
-          m.append(m.makeDeallocStack(for: .register(i), at: s.site), to: b)
+          m.append(DeallocStack(for: .register(i), at: s.site, in: m), to: b)
         }
-        return m.append(m.makeReturn(at: s.site), to: b)
+        return m.append(Return(at: s.site, in: m), to: b)
       }
       monomorphizer.rewrittenInstruction[i] = j
     }
@@ -300,7 +301,8 @@ extension Module {
         UNIMPLEMENTED("arbitrary compile-time values")
       }
 
-      let s = append(makeAllocStack(^program.ast.coreType("Int")!, at: insertionSite), to: entry)
+      let s = append(
+        AllocStack(^program.ast.coreType("Int")!, at: insertionSite, in: self), to: entry)
 
       var log = DiagnosticSet()
       Emitter.withInstance(insertingIn: &self, reportingDiagnosticsTo: &log) { (e) in

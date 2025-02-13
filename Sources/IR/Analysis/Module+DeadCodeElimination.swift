@@ -64,7 +64,7 @@ extension Module {
     for b in blocks(in: f) {
       if let i = instructions(in: b).first(where: returnsNever) {
         removeAllInstructions(after: i)
-        insert(makeUnreachable(at: self[i].site), at: .after(i))
+        insert(Unreachable(at: self[i].site, in: self), at: .after(i))
       }
     }
   }

@@ -25,12 +25,20 @@ public struct OpenUnion: RegionEntry {
   /// The site of the code corresponding to that instruction.
   public let site: SourceRange
 
-  /// Creates an instance with the given properties.
-  fileprivate init(
-    container: Operand, payloadType: AnyType, isUsedForInitialization: Bool, site: SourceRange
+  /// Creates an `open_union` anchored at `site` that projects the address of `container`'s payload
+  /// viewed as an instance of `payload`.
+  ///
+  /// If the bits of the union's discriminator are hidden in its storage, this function removes
+  /// them before projecting the address unless `isUsedForInitialization` is `true`.
+  public init(
+    _ container: Operand, as payload: AnyType,
+    forInitialization isUsedForInitialization: Bool = false,
+    at site: SourceRange, in m: Module
   ) {
+    precondition(m.type(of: container).isAddress)
+    precondition(payload.isCanonical)
     self.container = container
-    self.payloadType = payloadType
+    self.payloadType = payload
     self.isUsedForInitialization = isUsedForInitialization
     self.site = site
   }
@@ -58,29 +66,6 @@ extension OpenUnion: CustomStringConvertible {
     } else {
       return "open_union \(container) as \(payloadType)"
     }
-  }
-
-}
-
-extension Module {
-
-  /// Creates an `open_union` anchored at `site` that projects the address of `container`'s payload
-  /// viewed as an instance of `payload`.
-  ///
-  /// If the bits of the union's discriminator are hidden in its storage, this function removes
-  /// them before projecting the address unless `isUsedForInitialization` is `true`.
-  func makeOpenUnion(
-    _ container: Operand, as payload: AnyType,
-    forInitialization isUsedForInitialization: Bool = false,
-    at site: SourceRange
-  ) -> OpenUnion {
-    precondition(type(of: container).isAddress)
-    precondition(payload.isCanonical)
-    return .init(
-      container: container,
-      payloadType: payload,
-      isUsedForInitialization: isUsedForInitialization,
-      site: site)
   }
 
 }

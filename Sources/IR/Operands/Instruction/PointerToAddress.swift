@@ -15,8 +15,12 @@ public struct PointerToAddress: Instruction {
   /// The site of the code corresponding to that instruction.
   public let site: SourceRange
 
-  /// Creates an instance with the given properties.
-  fileprivate init(source: Operand, target: RemoteType, site: SourceRange) {
+  /// Creates a `pointer_to_address` anchored at `site` that converts `source`, which is a
+  /// built-in pointer value, to an address of type `target`.
+  public init(
+    _ source: Operand, to target: RemoteType, at site: SourceRange, in m: Module
+  ) {
+    precondition(target.access != .yielded)
     self.source = source
     self.target = target
     self.site = site
@@ -41,19 +45,6 @@ extension PointerToAddress: CustomStringConvertible {
 
   public var description: String {
     "pointer_to_address \(source) as \(target)"
-  }
-
-}
-
-extension Module {
-
-  /// Creates a `pointer_to_address` anchored at `site` that converts `source`, which is a
-  /// built-in pointer value, to an address of type `target`.
-  func makePointerToAddress(
-    _ source: Operand, to target: RemoteType, at site: SourceRange
-  ) -> PointerToAddress {
-    precondition(target.access != .yielded)
-    return .init(source: source, target: target, site: site)
   }
 
 }

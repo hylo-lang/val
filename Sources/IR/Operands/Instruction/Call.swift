@@ -13,13 +13,20 @@ public struct Call: Instruction {
   /// The site of the code corresponding to that instruction.
   public let site: SourceRange
 
-  /// Creates an instance with the given properties.
-  fileprivate init(
-    callee: Operand,
-    output: Operand,
-    arguments: [Operand],
-    site: SourceRange
+  /// Creates a `call` anchored at `site` that applies `callee` on `arguments` and writes its
+  /// result to `output`.
+  public init(
+    applying callee: Operand,
+    to arguments: [Operand],
+    writingResultTo output: Operand,
+    at site: SourceRange,
+    in m: Module
   ) {
+    let t = ArrowType(m.type(of: callee).ast)!.strippingEnvironment
+    precondition(t.inputs.count == arguments.count)
+    precondition(arguments.allSatisfy({ m[$0] is Access }))
+    precondition(m.isBorrowSet(output))
+
     self.operands = [callee, output] + arguments
     self.site = site
   }
@@ -52,29 +59,6 @@ extension Call: CustomStringConvertible {
 
   public var description: String {
     "call \(callee)(\(list: arguments)) to \(output)"
-  }
-
-}
-
-extension Module {
-
-  /// Creates a `call` anchored at `site` that applies `callee` on `arguments` and writes its
-  /// result to `output`.
-  ///
-  /// - Parameters:
-  ///   - callee: The function to call.
-  ///   - output: The location at which the result of `callee` is stored.
-  ///   - arguments: The arguments of the call; one for each input of `callee`'s type.
-  func makeCall(
-    applying callee: Operand, to arguments: [Operand], writingResultTo output: Operand,
-    at site: SourceRange
-  ) -> Call {
-    let t = ArrowType(type(of: callee).ast)!.strippingEnvironment
-    precondition(t.inputs.count == arguments.count)
-    precondition(arguments.allSatisfy({ self[$0] is Access }))
-    precondition(isBorrowSet(output))
-
-    return .init(callee: callee, output: output, arguments: arguments, site: site)
   }
 
 }

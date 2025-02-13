@@ -15,12 +15,23 @@ public struct Move: Instruction {
   /// The site of the code corresponding to that instruction.
   public let site: SourceRange
 
-  /// Creates an instance with the given properties.
-  fileprivate init(
-    object: Operand, target: Operand, movable: FrontEnd.Conformance, site: SourceRange
+  /// Creates a `move` anchored at `site` that moves `value` into `storage` using the move
+  /// operations defined by `movable`.
+  ///
+  /// This instruction is replaced during IR transformation by either the initialization or
+  /// assignment of `storage`, depending on its initialization state.
+  ///
+  /// - Parameters:
+  ///   - value: The object to move. Must have an address type.
+  ///   - storage: The location to initialize or assign. Must have an address type.
+  public init(
+    _ value: Operand, to storage: Operand, usingConformance movable: FrontEnd.Conformance,
+    at site: SourceRange, in m: Module
   ) {
-    self.object = object
-    self.target = target
+    precondition(m.type(of: value).isAddress)
+    precondition(m.type(of: storage).isAddress)
+    self.object = value
+    self.target = storage
     self.movable = movable
     self.site = site
   }
@@ -40,24 +51,3 @@ public struct Move: Instruction {
 
 }
 
-extension Module {
-
-  /// Creates a `move` anchored at `site` that moves `value` into `storage` using the move
-  /// operations defined by `movable`.
-  ///
-  /// This instruction is replaced during IR transformation by either the initialization or
-  /// assignment of `storage`, depending on its initialization state.
-  ///
-  /// - Parameters:
-  ///   - value: The object to move. Must have an address type.
-  ///   - storage: The location to initialize or assign. Must have an address type.
-  func makeMove(
-    _ value: Operand, to storage: Operand, usingConformance movable: FrontEnd.Conformance,
-    at site: SourceRange
-  ) -> Move {
-    precondition(type(of: value).isAddress)
-    precondition(type(of: storage).isAddress)
-    return .init(object: value, target: storage, movable: movable, site: site)
-  }
-
-}

@@ -12,11 +12,13 @@ public struct ConstantString: Instruction {
   /// The site of the code corresponding to that instruction.
   public let site: SourceRange
 
-  /// Creates an instance with the given properties.
-  fileprivate init(value: Data, site: SourceRange) {
+  /// Creates a `constant_string` anchored at `site` that returns a string with given `value`,
+  /// encoded in UTF8.
+  public init(utf8 value: Data, at site: SourceRange, in m: Module) {
     self.value = value
     self.site = site
   }
+
 
   public var result: IR.`Type`? {
     .object(BuiltinType.i(64))
@@ -34,16 +36,6 @@ extension ConstantString: CustomStringConvertible {
 
   public var description: String {
     "constant_string \(String(data: value, encoding: .utf8)!.debugDescription)"
-  }
-
-}
-
-extension Module {
-
-  /// Creates a `constant_string` anchored at `site` that returns a  string with given `value`,
-  /// encoded in UTF8.
-  func makeConstantString(utf8 value: Data, at site: SourceRange) -> ConstantString {
-    .init(value: value, site: site)
   }
 
 }

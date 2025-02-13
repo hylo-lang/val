@@ -16,11 +16,21 @@ public struct WrapExistentialAddr: Instruction {
   /// The site of the code corresponding to that instruction.
   public let site: SourceRange
 
-  /// Creates an instance with the given properties.
-  fileprivate init(witness: Operand, table: Operand, interface: IR.`Type`, site: SourceRange) {
+  /// Creates a `wrap_existential_addr` anchored at `site` that creates an existential container of
+  /// type `interface` wrapping `witness` and `table`.
+  ///
+  /// - Parameters:
+  ///   - witness: The address of the object wrapped in the container.
+  ///   - interface: The type of the container.
+  ///   - table: The witness table of the wrapped value. Must be a pointer to a witness table.
+  init(
+    _ witness: Operand, _ table: Operand, as interface: ExistentialType,
+    at site: SourceRange, in m: Module
+  ) {
+    precondition(m.type(of: witness).isAddress)
     self.witness = witness
     self.table = table
-    self.interface = interface
+    self.interface = .address(interface)
     self.site = site
   }
 
@@ -47,25 +57,6 @@ extension WrapExistentialAddr: CustomStringConvertible {
 
   public var description: String {
     "wrap_existential_addr \(witness), \(table) as \(interface)"
-  }
-
-}
-
-extension Module {
-
-  /// Creates a `wrap_existential_addr` anchored at `site` that creates an existential container of
-  /// type `interface` wrapping `witness` and `table`.
-  ///
-  /// - Parameters:
-  ///   - witness: The address of the object wrapped in the container.
-  ///   - interface: The type of the container.
-  ///   - table: The witness table of the wrapped value. Must be a pointer to a witness table.
-  func makeWrapExistentialAddr(
-    _ witness: Operand, _ table: Operand, as interface: ExistentialType,
-    at site: SourceRange
-  ) -> WrapExistentialAddr {
-    precondition(type(of: witness).isAddress)
-    return .init(witness: witness, table: table, interface: .address(interface), site: site)
   }
 
 }

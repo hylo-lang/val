@@ -17,16 +17,19 @@ public struct SubfieldView: Instruction {
   /// The site of the code corresponding to that instruction.
   public let site: SourceRange
 
-  /// Creates an instance with the given properties.
-  fileprivate init(
-    base: Operand,
-    subfield: RecordPath,
-    subfieldType: IR.`Type`,
-    site: SourceRange
+
+  /// Creates a `subfield_view` anchored at `site` computing the address of the given `subfield` of
+  /// some record at `recordAddress`.
+  init(
+    of recordAddress: Operand, subfield elementPath: RecordPath,
+    at site: SourceRange, in module: Module
   ) {
-    self.recordAddress = base
-    self.subfield = subfield
-    self.resultType = subfieldType
+    precondition(module.type(of: recordAddress).isAddress)
+    let l = AbstractTypeLayout(of: module.type(of: recordAddress).ast, definedIn: module.program)
+    let t = l[elementPath].type
+    self.recordAddress = recordAddress
+    self.subfield = elementPath
+    self.resultType = .address(t)
     self.site = site
   }
 
@@ -49,28 +52,6 @@ extension SubfieldView: CustomStringConvertible {
 
   public var description: String {
     "subfield_view \(recordAddress)\(subfield.isEmpty ? "" : ", ")\(list: subfield)"
-  }
-
-}
-
-extension Module {
-
-  /// Creates a `subfield_view` anchored at `site` computing the address of the given `subfield` of
-  /// some record at `recordAddress`.
-  ///
-  /// - Note: `base` is returned unchanged if `elementPath` is empty.
-  func makeSubfieldView(
-    of recordAddress: Operand, subfield elementPath: RecordPath, at site: SourceRange
-  ) -> SubfieldView {
-    precondition(type(of: recordAddress).isAddress)
-    let l = AbstractTypeLayout(of: self.type(of: recordAddress).ast, definedIn: program)
-    let t = l[elementPath].type
-
-    return .init(
-      base: recordAddress,
-      subfield: elementPath,
-      subfieldType: .address(t),
-      site: site)
   }
 
 }

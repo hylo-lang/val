@@ -61,25 +61,26 @@ extension Project: CustomStringConvertible {
 
 }
 
-extension Module {
+extension Project {
 
   /// Creates a `project` anchored at `site` that projects a value of type `t` by applying `s`,
   /// which is a reference to a lowered subscript, on `arguments`.
-  func makeProject(
-    _ t: RemoteType, applying s: FunctionReference, to arguments: [Operand], at site: SourceRange
-  ) -> Project {
-    .init(
+  init(
+    _ t: RemoteType, applying s: FunctionReference, to arguments: [Operand], at site: SourceRange,
+    in m: Module
+  ) {
+    self.init(
       projection: t, callee: s.function, specialization: s.specialization,
       operands: arguments, site: site)
   }
 
   /// Creates a `project` anchored at `site` that projects a value of type `t` by applying `s`,
   /// which is a lowered subscript, specialized by `z`, on `arguments`.
-  func makeProject(
+  init(
     _ t: RemoteType, applying s: Function.ID, specializedBy z: GenericArguments,
-    to arguments: [Operand], at site: SourceRange
-  ) -> Project {
-    .init(projection: t, callee: s, specialization: z, operands: arguments, site: site)
+    to arguments: [Operand], at site: SourceRange, in m: Module
+  ) {
+    self.init(projection: t, callee: s, specialization: z, operands: arguments, site: site)
   }
 
 }

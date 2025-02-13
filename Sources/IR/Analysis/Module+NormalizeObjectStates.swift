@@ -575,21 +575,23 @@ extension Module {
       insertingDeinitializationBefore i: InstructionID,
       reportingDiagnosticsAt site: SourceRange
     ) {
-      context.withObject(at: .root(p), { (o) in
-        let s = o.value.initializedSubfields
-        if s == [[]] && isDeinit(i.function) {
-          // We cannot call `deinit` in `deinit` itself.
-          insertDeinitParts(
-            of: p, before: i,
-            anchoringInstructionsTo: site, reportingDiagnosticsTo: &diagnostics)
-        } else {
-          insertDeinit(
-            p, at: s, before: i,
-            anchoringInstructionsTo: site, reportingDiagnosticsTo: &diagnostics)
-        }
+      context.withObject(
+        at: .root(p),
+        { (o) in
+          let s = o.value.initializedSubfields
+          if s == [[]] && isDeinit(i.function) {
+            // We cannot call `deinit` in `deinit` itself.
+            insertDeinitParts(
+              of: p, before: i,
+              anchoringInstructionsTo: site, reportingDiagnosticsTo: &diagnostics)
+          } else {
+            insertDeinit(
+              p, at: s, before: i,
+              anchoringInstructionsTo: site, reportingDiagnosticsTo: &diagnostics)
+          }
 
-        o.value = .full(.uninitialized)
-      })
+          o.value = .full(.uninitialized)
+        })
     }
 
     /// Checks that the return value is initialized in `context`.

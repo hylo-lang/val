@@ -41,14 +41,14 @@ extension Branch: CustomStringConvertible {
 
 }
 
-extension Module {
+extension Branch {
 
   /// Creates a `branch` anchored at `site` that unconditionally jumps at the start of a block.
   ///
   /// - Parameters:
   ///   - target: The block in which control flow jumps.
-  func makeBranch(to target: Block.ID, at anchor: SourceRange) -> Branch {
-    .init(target: target, site: anchor)
+  init(to target: Block.ID, at anchor: SourceRange, in m: Module) {
+    self.init(target: target, site: anchor)
   }
 
 }

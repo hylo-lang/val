@@ -19,15 +19,25 @@ public struct UnionSwitch: Terminator {
   /// The site of the code corresponding to that instruction.
   public let site: SourceRange
 
-  /// Creates an instance with the given properties.
-  fileprivate init(discriminator: Operand, union: UnionType, targets: Targets, site: SourceRange) {
+  /// Creates a `union_switch` anchored at `site` that switches over `discriminator`, which is the
+  /// discriminator of a container of type `union`, jumping to corresponding block in `target`.
+  ///
+  /// If `union` is generic, `discriminator` should be the result of `union_discriminator` rather
+  /// than a constant.
+  ///
+  /// - Requires: `targets` has a key defined for each of `union`.
+  init(
+    over discriminator: Operand, of union: UnionType, toOneOf targets: UnionSwitch.Targets,
+    at site: SourceRange, in m: Module
+  ) {
+    let t = m.type(of: discriminator)
+    precondition(t.isObject && t.ast.isBuiltinInteger)
+    precondition(union.elements.allSatisfy({ (e) in targets[e] != nil }))
     self.discriminator = discriminator
     self.union = union
     self.targets = targets
     self.site = site
   }
-
-  
 
   public var operands: [Operand] {
     [discriminator]
@@ -45,7 +55,10 @@ public struct UnionSwitch: Terminator {
   mutating func replaceSuccessor(_ old: Block.ID, with new: Block.ID) -> Bool {
     precondition(new.function == successors[0].function)
     for (t, b) in targets {
-      if b == old { targets[t] = b; return true }
+      if b == old {
+        targets[t] = b
+        return true
+      }
     }
     return false
   }
@@ -64,23 +77,3 @@ extension UnionSwitch: CustomStringConvertible {
 
 }
 
-extension Module {
-
-  /// Creates a `union_switch` anchored at `site` that switches over `discriminator`, which is the
-  /// discriminator of a container of type `union`, jumping to corresponding block in `target`.
-  ///
-  /// If `union` is generic, `discriminator` should be the result of `union_discriminator` rather
-  /// than a constant.
-  ///
-  /// - Requires: `targets` has a key defined for each of `union`.
-  func makeUnionSwitch(
-    over discriminator: Operand, of union: UnionType, toOneOf targets: UnionSwitch.Targets,
-    at site: SourceRange
-  ) -> UnionSwitch {
-    let t = type(of: discriminator)
-    precondition(t.isObject && t.ast.isBuiltinInteger)
-    precondition(union.elements.allSatisfy({ (e) in targets[e] != nil }))
-    return .init(discriminator: discriminator, union: union, targets: targets, site: site)
-  }
-
-}

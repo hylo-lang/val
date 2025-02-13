@@ -9,8 +9,10 @@ public struct UnionDiscriminator: Instruction {
   /// The site of the code corresponding to that instruction.
   public var site: SourceRange
 
-  /// Creates an instance with the given properties.
-  fileprivate init(container: Operand, site: SourceRange) {
+  /// Creates a `union_discriminator` anchored at `site` that returns the discriminator of the
+  /// element stored in `container`.
+  init(_ container: Operand, at site: SourceRange, in module: Module) {
+    precondition(module.type(of: container).isAddress)
     self.container = container
     self.site = site
   }
@@ -30,15 +32,3 @@ public struct UnionDiscriminator: Instruction {
 
 }
 
-extension Module {
-
-  /// Creates a `union_discriminator` anchored at `site` that returns the discriminator of the
-  /// element stored in `container`.
-  func makeUnionDiscriminator(
-    _ container: Operand, at site: SourceRange
-  ) -> UnionDiscriminator {
-    precondition(type(of: container).isAddress)
-    return .init(container: container, site: site)
-  }
-
-}
