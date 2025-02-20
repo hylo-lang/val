@@ -112,13 +112,13 @@ struct ParserState {
 
   /// Returns whether there is a new line in the character stream before `bound`.
   mutating func hasNewline(before bound: Token) -> Bool {
-    lexer.sourceCode.text[currentIndex ..< bound.site.startIndex]
+    lexer.sourceCode.text[currentIndex..<bound.site.startIndex]
       .contains(where: { $0.isNewline })
   }
 
   /// Returns a site from `startIndex` to `self.currentIndex`.
   func range(from startIndex: String.Index) -> SourceRange {
-    lexer.sourceCode.range(startIndex ..< currentIndex)
+    lexer.sourceCode.range(startIndex..<currentIndex)
   }
 
   /// Returns whether `token` is a member index.
@@ -126,7 +126,7 @@ struct ParserState {
     (token.kind == .int)
       && lexer.sourceCode[token.site].allSatisfy({ ch in
         guard let ascii = ch.asciiValue else { return false }
-        return (0x30 ... 0x39) ~= ascii
+        return (0x30...0x39) ~= ascii
       })
   }
 
@@ -257,7 +257,7 @@ struct ParserState {
         upper = next.site.endIndex
       }
 
-      let range = head.site.file.range(head.site.startIndex ..< upper)
+      let range = head.site.file.range(head.site.startIndex..<upper)
       return SourceRepresentable(value: String(lexer.sourceCode[range]), range: range)
 
     default:

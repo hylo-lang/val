@@ -141,7 +141,7 @@ extension Base64VarUInt: LosslessStringConvertible {
     var digits: [Base64Digit] = []
     digits.reserveCapacity(digitCount)
 
-    for _ in 0 ..< digitCount {
+    for _ in 0..<digitCount {
       guard let ai = digit() else { return nil }
       digits.append(ai)
     }

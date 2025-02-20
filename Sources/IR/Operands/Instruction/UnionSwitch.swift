@@ -27,8 +27,6 @@ public struct UnionSwitch: Terminator {
     self.site = site
   }
 
-  
-
   public var operands: [Operand] {
     [discriminator]
   }
@@ -45,7 +43,10 @@ public struct UnionSwitch: Terminator {
   mutating func replaceSuccessor(_ old: Block.ID, with new: Block.ID) -> Bool {
     precondition(new.function == successors[0].function)
     for (t, b) in targets {
-      if b == old { targets[t] = b; return true }
+      if b == old {
+        targets[t] = b
+        return true
+      }
     }
     return false
   }

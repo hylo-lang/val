@@ -491,7 +491,7 @@ struct Demangler {
     let ts = takeItems(from: &stream) { (me, s) in
       me.demangleType(from: &s)
     }
-    return ts.map({ (s) in .type(.existentialTrait(s))})
+    return ts.map({ (s) in .type(.existentialTrait(s)) })
   }
 
   /// Demangles an arrow type from `stream`.
@@ -562,7 +562,7 @@ struct Demangler {
 
     var elements: [DemangledType] = []
     elements.reserveCapacity(Int(elementCount.rawValue))
-    for _ in 0 ..< elementCount.rawValue {
+    for _ in 0..<elementCount.rawValue {
       // Elements only do not share the same symbol lookup table; only a prefix.
       var d = self
       guard
@@ -644,7 +644,7 @@ struct Demangler {
   private mutating func takeString(from stream: inout Substring) -> Substring? {
     switch takeInteger(from: &stream)?.rawValue {
     case .some(0):
-      return stream[stream.startIndex ..< stream.startIndex]
+      return stream[stream.startIndex..<stream.startIndex]
     case .some(1):
       return takeInteger(from: &stream).flatMap({ (m) in strings[Int(m.rawValue)] })
     case .some(let n):
@@ -691,7 +691,7 @@ struct Demangler {
     var xs: [T] = []
     xs.reserveCapacity(Int(n.rawValue))
 
-    for _ in 0 ..< n.rawValue {
+    for _ in 0..<n.rawValue {
       guard let x = takeItem(&self, &stream) else { return nil }
       xs.append(x)
     }

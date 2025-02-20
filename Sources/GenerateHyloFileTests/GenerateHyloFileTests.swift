@@ -34,13 +34,13 @@ struct GenerateHyloFileTests: ParsableCommand {
       let trailing = test.arguments.reduce(into: "", { (s, a) in s.write(", \(a)") })
       swiftCode += """
 
-        func test_\(test.methodName)_\(testID)() throws {
-          try \(test.methodName)(
-            \(String(reflecting: source.fileSystemPath)),
-            extending: programToExtend!\(trailing))
-        }
+          func test_\(test.methodName)_\(testID)() throws {
+            try \(test.methodName)(
+              \(String(reflecting: source.fileSystemPath)),
+              extending: programToExtend!\(trailing))
+          }
 
-      """
+        """
     }
   }
 
@@ -131,7 +131,7 @@ extension StringProtocol where Self.SubSequence == Substring {
 }
 
 /// The name of a method implementing the logic of a test runner.
-fileprivate enum TestMethod: String {
+private enum TestMethod: String {
 
   /// Compiles and runs the program.
   case compileAndRun
@@ -154,7 +154,7 @@ fileprivate enum TestMethod: String {
 }
 
 /// An argument of a test runner.
-fileprivate struct TestArgument: CustomStringConvertible {
+private struct TestArgument: CustomStringConvertible {
 
   /// The label of an argument.
   enum Label: String {

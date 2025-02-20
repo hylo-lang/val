@@ -143,7 +143,7 @@ public struct Module {
 
   /// If `p` is a function parameter, returns its passing convention. Otherwise, returns `nil`.
   public func passingConvention(of p: Operand) -> AccessEffect? {
-    if case .parameter(let e, let i) = p, (entry(of: e.function) == e) {
+    if case .parameter(let e, let i) = p, entry(of: e.function) == e {
       return passingConvention(parameter: i, of: e.function)
     } else {
       return nil
@@ -906,7 +906,7 @@ public struct Module {
     let user = impl(&self, newInstruction)
 
     // Update the def-use chains.
-    for i in 0 ..< newInstruction.operands.count {
+    for i in 0..<newInstruction.operands.count {
       uses[newInstruction.operands[i], default: []].append(Use(user: user, index: i))
     }
 

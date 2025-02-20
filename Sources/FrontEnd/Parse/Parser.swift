@@ -27,16 +27,22 @@ public enum Parser {
     _ input: SourceFile,
     inNodeSpace k: Int,
     in ast: inout AST,
-    diagnostics: inout DiagnosticSet
+    diagnostics: inout DiagnosticSet,
+    profileWith profiler: ProfilingMeasurements?
   ) throws -> TranslationUnit.ID {
     // Temporarily stash the AST and diagnostics in the parser state, avoiding CoW costs
     var state = ParserState(
-      ast: ast, space: k, lexer: Lexer(tokenizing: input), reportingDiagnosticsTo: diagnostics)
+      ast: ast, space: k, lexer: Lexer(tokenizing: input, profileWith: profiler),
+      reportingDiagnosticsTo: diagnostics)
     defer { diagnostics = state.diagnostics }
     diagnostics = DiagnosticSet()
 
     // Parse the input.
     var members: [AnyDeclID] = []
+
+    // start time measurement if needed
+    let probe = profiler?.createAndStartProfilingProbe(MeasurementType.Parser)
+    defer { probe?.stop() }
 
     while let head = state.peek() {
       // Ignore semicolons.
@@ -57,7 +63,7 @@ public enum Parser {
           Diagnostic(
             level: .error,
             message: "\(type(of: error)): \(error)",
-            site: state.lexer.sourceCode.range(startIndex ..< state.currentIndex)))
+            site: state.lexer.sourceCode.range(startIndex..<state.currentIndex)))
         continue
       }
 
@@ -93,7 +99,7 @@ public enum Parser {
     let translation = state.insert(
       TranslationUnit(
         decls: members,
-        site: input.range(input.text.startIndex ..< input.text.endIndex)))
+        site: input.range(input.text.startIndex..<input.text.endIndex)))
 
     try state.diagnostics.throwOnError()
     ast = state.ast
@@ -1461,7 +1467,7 @@ public enum Parser {
       if !state.hasLeadingWhitespace {
         // If there isn't any leading whitespace before the next expression but the operator is on
         // a different line, we may be looking at the start of a prefix expression.
-        let rangeBefore = state.ast[lhs].site.endIndex ..< operatorStem.site.startIndex
+        let rangeBefore = state.ast[lhs].site.endIndex..<operatorStem.site.startIndex
         if state.lexer.sourceCode.text[rangeBefore].contains(where: { $0.isNewline }) {
           state.restore(from: backup)
           break
@@ -3050,7 +3056,7 @@ public enum Parser {
         guard let c = parseConnective(in: &state) else { return lhs }
 
         // Backtrack if the connective we got hasn't strong enough precedence.
-        if (c.rawValue < p.rawValue) {
+        if c.rawValue < p.rawValue {
           state.restore(from: backup)
           return lhs
         }
@@ -3104,7 +3110,7 @@ public enum Parser {
       } else if h.kind == .poundElse {
         fallback = try parseConditionalCompilationBranch(in: &state)
         _ = try state.expect("'#endif'", using: { $0.take(.poundEndif) })
-      } else{
+      } else {
         fallback = [try parseCompilerConditionTail(head: h, in: &state)]
       }
 

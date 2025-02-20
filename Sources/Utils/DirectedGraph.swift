@@ -71,7 +71,7 @@ public struct DirectedGraph<Vertex: Hashable, Label> {
   @discardableResult
   public mutating func insertVertex(_ v: Vertex) -> Bool {
     modify(&out[v]) { (o) in
-      if (o == nil) {
+      if o == nil {
         o = [:]
         return true
       } else {

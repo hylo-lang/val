@@ -30,7 +30,7 @@ public struct Switch: Terminator {
 
   mutating func replaceSuccessor(_ old: Block.ID, with new: Block.ID) -> Bool {
     precondition(new.function == successors[0].function)
-    for i in 0 ..< successors.count {
+    for i in 0..<successors.count {
       if successors[i] == old {
         successors[i] = new
         return true

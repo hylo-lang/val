@@ -1599,7 +1599,8 @@ struct TypeChecker {
       return (
         type: canonical(expectedType(of: m), in: scopeOfDefinition),
         name: program.name(of: m)!,
-        parameters: genericParameters(introducedBy: m))
+        parameters: genericParameters(introducedBy: m)
+      )
     }
 
     /// Returns the type of `m` viewed as a member of `model` through its conformance to `trait`.
@@ -1685,8 +1686,7 @@ struct TypeChecker {
       of requirement: AnyDeclID, withAPI expectedAPI: API
     ) -> SynthesizedFunctionDecl? {
       let scopeOfImplementation = AnyScopeID(origin.source)!
-      if
-        let k = program.ast.synthesizedKind(of: requirement),
+      if let k = program.ast.synthesizedKind(of: requirement),
         canSynthesizeConformance(model, to: trait, in: scopeOfImplementation)
       {
         let t = ArrowType(expectedAPI.type)!
@@ -4396,8 +4396,7 @@ struct TypeChecker {
     }
 
     // If the match is a trait member, specialize its receiver.
-    if
-      d.kind != AssociatedTypeDecl.self,
+    if d.kind != AssociatedTypeDecl.self,
       let t = traitDeclaring(d),
       let r = context?.type ?? resolveReceiverMetatype(in: scopeOfUse)?.instance
     {
@@ -4533,8 +4532,7 @@ struct TypeChecker {
     reportingDiagnosticsAt diagnosticSite: SourceRange
   ) -> AnyType {
     let lens = traitDeclaring(d)!
-    if
-      let c = demandConformance(of: domain, to: lens, exposedTo: scopeOfUse),
+    if let c = demandConformance(of: domain, to: lens, exposedTo: scopeOfUse),
       let i = c.implementations[d]?.decl
     {
       return uncheckedType(of: i)
@@ -5591,7 +5589,7 @@ struct TypeChecker {
     }
 
     // Create the necessary constraints to let the solver resolve the remaining components.
-    for i in (0 ..< unresolved.count).reversed() {
+    for i in (0..<unresolved.count).reversed() {
       let memberType = ^freshVariable()
       obligations.insert(
         MemberConstraint(
@@ -6589,7 +6587,7 @@ struct TypeChecker {
     let bb = bases(of: b)
 
     if ab.unordered.count > bb.unordered.count {
-      return .descending // !!! .ascending in Slava's work
+      return .descending  // !!! .ascending in Slava's work
     } else if ab.unordered.count == bb.unordered.count {
       return .init(between: a.decl.rawValue, and: b.decl.rawValue)
     } else {

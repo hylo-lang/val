@@ -95,6 +95,11 @@ public struct Driver: ParsableCommand {
     help: "Type-check the input file(s).")
   private var typeCheckOnly: Bool = false
 
+  @Flag(
+    name: [.customLong("profile-compiler")],
+    help: "Profile the compilation time")
+  private var profileCompiler: Bool = false
+
   @Option(
     name: [.customLong("trace-inference")],
     help: ArgumentHelp(
@@ -241,13 +246,18 @@ public struct Driver: ParsableCommand {
 
     let productName = makeProductName(inputs)
 
+    // Pool of measurements for time profiling
+    var profiler: ProfilingMeasurements? = profileCompiler ? ProfilingMeasurements() : nil
+    defer { profiler?.printProfilingReport() }
+
     // There's no need to load the standard library under `--emit raw-ast`.
     if outputType == .rawAST {
       var a = AST()
       _ = try a.loadModule(
         productName, parsing: sourceFiles(in: inputs),
         withBuiltinModuleAccess: importBuiltinModule,
-        reportingDiagnosticsTo: &log)
+        reportingDiagnosticsTo: &log,
+        profileWith: profiler)
       try write(a, to: astFile(productName))
       return
     }
@@ -266,7 +276,8 @@ public struct Driver: ParsableCommand {
         annotating: ScopedProgram(a), inParallel: experimentalParallelTypeChecking,
         reportingDiagnosticsTo: &log,
         tracingInferenceIf: shouldTraceInference,
-        loggingRequirementSystemIf: shouldLogRequirements)
+        loggingRequirementSystemIf: shouldLogRequirements,
+        profileWith: profiler)
     }
 
     let (program, sourceModule) = try dependencies.loadModule(
@@ -277,14 +288,14 @@ public struct Driver: ParsableCommand {
       try ast.loadModule(
         productName, parsing: sourceFiles(in: inputs), inNodeSpace: space,
         withBuiltinModuleAccess: importBuiltinModule,
-        reportingDiagnosticsTo: &log)
+        reportingDiagnosticsTo: &log,
+        profileWith: profiler)
     }
 
     if typeCheckOnly { return }
 
     // IR
-
-    var ir = try lower(program: program, reportingDiagnosticsTo: &log)
+    var ir = try lower(program: program, reportingDiagnosticsTo: &log, profileWith: profiler)
 
     if outputType == .ir || outputType == .rawIR {
       let m = ir.modules[sourceModule]!
@@ -295,7 +306,7 @@ public struct Driver: ParsableCommand {
     // LLVM
 
     logVerbose("begin depolymorphization pass.\n")
-    ir.depolymorphize()
+    ir.depolymorphize(profileWith: profiler)
 
     logVerbose("create LLVM target machine.\n")
     #if os(Windows)
@@ -305,7 +316,8 @@ public struct Driver: ParsableCommand {
     #endif
 
     logVerbose("create LLVM program.\n")
-    var llvmProgram = try LLVMProgram(ir, mainModule: sourceModule, for: target)
+    var llvmProgram = try LLVMProgram(
+      ir, mainModule: sourceModule, for: target, profileWith: profiler)
 
     logVerbose("LLVM mandatory passes.\n")
     llvmProgram.applyMandatoryPasses()
@@ -340,11 +352,14 @@ public struct Driver: ParsableCommand {
     let binaryPath = executableOutputPath(default: productName)
 
     #if os(macOS)
-      try makeMacOSExecutable(at: binaryPath, linking: objectFiles, diagnostics: &log)
+      try makeMacOSExecutable(
+        at: binaryPath, linking: objectFiles, diagnostics: &log, profileWith: profiler)
     #elseif os(Linux)
-      try makeLinuxExecutable(at: binaryPath, linking: objectFiles, diagnostics: &log)
+      try makeLinuxExecutable(
+        at: binaryPath, linking: objectFiles, diagnostics: &log, profileWith: profiler)
     #elseif os(Windows)
-      try makeWindowsExecutable(at: binaryPath, linking: objectFiles, diagnostics: &log)
+      try makeWindowsExecutable(
+        at: binaryPath, linking: objectFiles, diagnostics: &log, profileWith: profiler)
     #else
       _ = (objectFiles, binaryPath)
       UNIMPLEMENTED()
@@ -379,8 +394,11 @@ public struct Driver: ParsableCommand {
   ///
   /// Mandatory IR passes are applied unless `self.outputType` is `.rawIR`.
   private func lower(
-    program: TypedProgram, reportingDiagnosticsTo log: inout DiagnosticSet
+    program: TypedProgram, reportingDiagnosticsTo log: inout DiagnosticSet,
+    profileWith profiler: ProfilingMeasurements?
   ) throws -> IR.Program {
+    let probe = profiler?.createAndStartProfilingProbe(MeasurementType.IRLowering)
+    defer { probe?.stop() }
     var loweredModules: [ModuleDecl.ID: IR.Module] = [:]
     for d in program.ast.modules {
       loweredModules[d] = try lower(d, in: program, reportingDiagnosticsTo: &log)
@@ -410,9 +428,15 @@ public struct Driver: ParsableCommand {
   /// Combines the object files located at `objects` into an executable file at `binaryPath`,
   /// logging diagnostics to `log`.
   private func makeMacOSExecutable(
-    at binaryPath: String, linking objects: [URL], diagnostics: inout DiagnosticSet
+    at binaryPath: String, linking objects: [URL], diagnostics: inout DiagnosticSet,
+    profileWith profiler: ProfilingMeasurements?
   ) throws {
     let xcrun = try findExecutable(invokedAs: "xcrun").fileSystemPath
+
+    // linking profiling probe
+    let probe = profiler?.createAndStartProfilingProbe(MeasurementType.LinkPhase)
+    defer { probe?.stop() }
+
     let sdk =
       try runCommandLine(xcrun, ["--sdk", "macosx", "--show-sdk-path"], diagnostics: &diagnostics)
       ?? ""
@@ -434,7 +458,8 @@ public struct Driver: ParsableCommand {
   private func makeLinuxExecutable(
     at binaryPath: String,
     linking objects: [URL],
-    diagnostics: inout DiagnosticSet
+    diagnostics: inout DiagnosticSet,
+    profileWith profiler: ProfilingMeasurements?
   ) throws {
     var arguments = [
       "-o", binaryPath,
@@ -442,6 +467,10 @@ public struct Driver: ParsableCommand {
     arguments.append(contentsOf: librarySearchPaths.map({ "-L\($0)" }))
     arguments.append(contentsOf: objects.map(\.fileSystemPath))
     arguments.append(contentsOf: libraries.map({ "-l\($0)" }))
+
+    // linking profiling probe
+    let probe = profiler?.createAndStartProfilingProbe(MeasurementType.LinkPhase)
+    defer { probe?.stop() }
 
     // Note: We use "clang" rather than "ld" so that to deal with the entry point of the program.
     // See https://stackoverflow.com/questions/51677440
@@ -454,8 +483,13 @@ public struct Driver: ParsableCommand {
   private func makeWindowsExecutable(
     at binaryPath: String,
     linking objects: [URL],
-    diagnostics: inout DiagnosticSet
+    diagnostics: inout DiagnosticSet,
+    profileWith profiler: ProfilingMeasurements?
   ) throws {
+    // linking profiling probe
+    let probe = profiler?.createAndStartProfilingProbe(MeasurementType.LinkPhase)
+    defer { probe?.stop() }
+
     try runCommandLine(
       findExecutable(invokedAs: "lld-link").fileSystemPath,
       ["-defaultlib:HyloLibC", "-defaultlib:msvcrt", "-out:" + binaryPath]

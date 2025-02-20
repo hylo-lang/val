@@ -92,7 +92,7 @@ public struct TestAnnotation: Hashable {
       self.argument = nil
     } else {
       var argument = ""
-      for i in 0 ..< lines.count {
+      for i in 0..<lines.count {
         if i != 0 { argument.append("\n") }
         argument.append(contentsOf: lines[i].dropFirst(indentation.count))
       }
@@ -152,7 +152,7 @@ public struct TestAnnotation: Hashable {
           openedBlockComments = 0
           if let start = indexAfterAnnotationBlockOpener {
             annotations.append(
-              TestAnnotation(in: sourceCode.url, atLine: line, parsing: stream[start ..< index]))
+              TestAnnotation(in: sourceCode.url, atLine: line, parsing: stream[start..<index]))
             indexAfterAnnotationBlockOpener = nil
           }
 
@@ -184,7 +184,7 @@ public struct TestAnnotation: Hashable {
 
         if let start = start {
           annotations.append(
-            TestAnnotation(in: sourceCode.url, atLine: line, parsing: stream[start ..< index]))
+            TestAnnotation(in: sourceCode.url, atLine: line, parsing: stream[start..<index]))
         }
 
         continue

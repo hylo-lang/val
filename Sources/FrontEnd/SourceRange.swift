@@ -37,14 +37,14 @@ public struct SourceRange: Hashable {
   /// Returns a copy of `self` with the end increased (if necessary) to `newEnd`.
   public func extended(upTo newEnd: SourceFile.Index) -> SourceRange {
     precondition(newEnd >= endIndex)
-    return file.range(startIndex ..< newEnd)
+    return file.range(startIndex..<newEnd)
   }
 
   /// Returns a copy of `self` extended to cover `other`.
   public func extended(toCover other: SourceRange) -> SourceRange {
     precondition(file == other.file, "incompatible ranges")
     return file.range(
-      Swift.min(startIndex, other.startIndex) ..< Swift.max(endIndex, other.endIndex))
+      Swift.min(startIndex, other.startIndex)..<Swift.max(endIndex, other.endIndex))
   }
 
   /// Increases (if necessary) the end of `self` so that it equals `newEnd`.
@@ -64,7 +64,7 @@ public struct SourceRange: Hashable {
 
   /// Creates an empty range that starts and end at `p`.
   public static func empty(at p: SourcePosition) -> Self {
-    SourceRange(p.index ..< p.index, in: p.file)
+    SourceRange(p.index..<p.index, in: p.file)
   }
 
 }
@@ -86,7 +86,7 @@ extension SourceRange: Codable {
     let end = String.Index(
       utf16Offset: try container.decode(Int.self, forKey: .end),
       in: file.text)
-    regionOfFile = start ..< end
+    regionOfFile = start..<end
   }
 
   public func encode(to encoder: Encoder) throws {

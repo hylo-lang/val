@@ -35,7 +35,7 @@ public struct DeclIDs {
 
   /// The identifiers in `self` denoting type extending declarations.
   public var extensions: ArraySlice<AnyDeclID> {
-    all[0 ..< extensionEndIndex]
+    all[0..<extensionEndIndex]
   }
 
   /// The identifiers in `self` _not_ denoting type extending declarations.

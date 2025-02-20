@@ -575,21 +575,23 @@ extension Module {
       insertingDeinitializationBefore i: InstructionID,
       reportingDiagnosticsAt site: SourceRange
     ) {
-      context.withObject(at: .root(p), { (o) in
-        let s = o.value.initializedSubfields
-        if s == [[]] && isDeinit(i.function) {
-          // We cannot call `deinit` in `deinit` itself.
-          insertDeinitParts(
-            of: p, before: i,
-            anchoringInstructionsTo: site, reportingDiagnosticsTo: &diagnostics)
-        } else {
-          insertDeinit(
-            p, at: s, before: i,
-            anchoringInstructionsTo: site, reportingDiagnosticsTo: &diagnostics)
-        }
+      context.withObject(
+        at: .root(p),
+        { (o) in
+          let s = o.value.initializedSubfields
+          if s == [[]] && isDeinit(i.function) {
+            // We cannot call `deinit` in `deinit` itself.
+            insertDeinitParts(
+              of: p, before: i,
+              anchoringInstructionsTo: site, reportingDiagnosticsTo: &diagnostics)
+          } else {
+            insertDeinit(
+              p, at: s, before: i,
+              anchoringInstructionsTo: site, reportingDiagnosticsTo: &diagnostics)
+          }
 
-        o.value = .full(.uninitialized)
-      })
+          o.value = .full(.uninitialized)
+        })
     }
 
     /// Checks that the return value is initialized in `context`.
@@ -906,7 +908,7 @@ extension AbstractObject.Value where Domain == State {
   ) {
     guard case .partial(let subobjects) = self else { return }
 
-    for i in 0 ..< subobjects.count {
+    for i in 0..<subobjects.count {
       switch subobjects[i] {
       case .full(.initialized):
         paths.initialized.append(prefix + [i])
@@ -1007,7 +1009,7 @@ extension AbstractObject.Value where Domain == State {
     case (.partial(let lhs), .partial(let rhs)):
       // LHS and RHS are partially initialized.
       assert(lhs.count == rhs.count)
-      return (0 ..< lhs.count).reduce(into: []) { (result, i) in
+      return (0..<lhs.count).reduce(into: []) { (result, i) in
         result.append(contentsOf: (lhs[i] - rhs[i]).map({ [i] + $0 }))
       }
     }

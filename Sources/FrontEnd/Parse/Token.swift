@@ -111,7 +111,7 @@ public struct Token {
 
   /// Indicates whether `self` is a keyword.
   public var isKeyword: Bool {
-    (Kind.any.rawValue ..< Kind.any.rawValue + 999) ~= kind.rawValue
+    (Kind.any.rawValue..<Kind.any.rawValue + 999) ~= kind.rawValue
   }
 
   /// Indicates whether `self` is a suitable as a label.

@@ -5,7 +5,9 @@ import Utils
 extension IR.Program {
 
   /// Generates the non-parametric reslient APIs of the modules in `self`.
-  public mutating func depolymorphize() {
+  public mutating func depolymorphize(profileWith profiler: ProfilingMeasurements? = nil) {
+    let probe = profiler?.createAndStartProfilingProbe(MeasurementType.Depolymorphize)
+    defer { probe?.stop() }
     for m in modules.keys {
       depolymorphize(m)
     }

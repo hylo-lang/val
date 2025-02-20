@@ -29,7 +29,7 @@ struct MergingConstraint: Constraint, Hashable {
 
   mutating func modifyTypes(_ transform: (AnyType) -> AnyType) {
     update(&supertype, with: transform)
-    for i in 0 ..< branches.count {
+    for i in 0..<branches.count {
       update(&branches[i], with: transform)
     }
   }

@@ -75,7 +75,7 @@ extension StringProtocol {
 
       // Copy non-whitespace text, and advance the text we need to copy
       result.append(contentsOf: remaining[..<idx])
-      remaining = remaining[idx ..< self.endIndex]
+      remaining = remaining[idx..<self.endIndex]
     }
 
     return result

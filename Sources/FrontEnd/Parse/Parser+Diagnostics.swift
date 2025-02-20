@@ -11,7 +11,7 @@ extension Diagnostic {
   static func error(expected subject: String, at location: SourcePosition, notes: [Diagnostic] = [])
     -> Diagnostic
   {
-    .error("expected \(subject)", at: location ..< location, notes: notes)
+    .error("expected \(subject)", at: location..<location, notes: notes)
   }
 
   static func error(
@@ -41,11 +41,11 @@ extension Diagnostic {
   }
 
   static func error(unterminatedCommentStartingAt p: SourcePosition) -> Diagnostic {
-    .error("unterminated comment", at: p ..< p)
+    .error("unterminated comment", at: p..<p)
   }
 
   static func error(unterminatedStringStartingAt p: SourcePosition) -> Diagnostic {
-    .error("unterminated string", at: p ..< p)
+    .error("unterminated string", at: p..<p)
   }
 
   static func error(duplicateAccessModifier m: SourceRepresentable<AccessModifier>) -> Diagnostic {

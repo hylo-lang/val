@@ -53,7 +53,7 @@ extension Chunks: Collection {
 
   /// Accesses the chunk at `position`.
   public subscript(position: Index) -> Element {
-    base[position ..< index(after: position)]
+    base[position..<index(after: position)]
   }
 
 }
