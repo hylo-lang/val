@@ -2,6 +2,7 @@ version: 1
 builder:
   configs:
   - platform: linux
+    # **Do not change without a global search/replace for this version string.**
     swift_version: '5.10'
     image: registry.gitlab.com/finestructure/spi-images:hylo-5.10-latest
     documentation_targets:
@@ -21,12 +22,3 @@ builder:
     --source-service-base-url, https://github.com/hylo-lang/hylo/blob/main,
     --checkout-path, .
     ]
-  - platform: linux
-    swift_version: '5.9'
-    image: registry.gitlab.com/finestructure/spi-images:hylo-5.9-latest
-  - platform: linux
-    swift_version: '5.8'
-    image: registry.gitlab.com/finestructure/spi-images:hylo-5.8-latest
-  - platform: linux
-    swift_version: '5.7'
-    image: registry.gitlab.com/finestructure/spi-images:hylo-5.7-latest
