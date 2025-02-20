@@ -1,5 +1,5 @@
 /// A half-open interval from a lower bound up to, but not including, an uppor bound.
-public type Range<Bound: SemiRegular & Comparable> {
+public type Range<Bound: Movable & Deinitializable & Comparable> {
 
   // TODO: private(set)
   /// The minimum value included in `self`.
