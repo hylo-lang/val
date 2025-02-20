@@ -18,4 +18,4 @@ jobs:
         show-progress: false
 
     - name: Check spelling of file.txt
-      uses: crate-ci/typos@v1.24.6
+      uses: crate-ci/typos@v1.28.4
