@@ -238,7 +238,6 @@ jobs:
         uses: SwiftyLab/setup-swift@latest
         with:
           swift-version: ${{ env.swift-version }}
-          cache-snapshot: false # Workaround for https://github.com/SwiftyLab/setup-swift/issues/315
 
       - uses: compnerd/gha-setup-vsdevenv@main
       - name: Set up swift (Windows)
