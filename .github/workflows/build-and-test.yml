@@ -233,20 +233,13 @@ jobs:
         run: ./Tools/set-hc-version.sh ${{ needs.determine-version.outputs.version }}
         shell: bash
 
-      - name: Set up swift (non-Windows)
-        if: ${{ runner.os != 'Windows' }}
+      - name: Set up swift
         uses: SwiftyLab/setup-swift@latest
         with:
           swift-version: ${{ env.swift-version }}
-          cache-snapshot: false # Workaround for https://github.com/SwiftyLab/setup-swift/issues/315
 
-      - uses: compnerd/gha-setup-vsdevenv@main
-      - name: Set up swift (Windows)
-        if: ${{ runner.os == 'Windows' }}
-        uses: compnerd/gha-setup-swift@v0.2.2
-        with:
-          branch: swift-${{ env.swift-version }}-release
-          tag: ${{ env.swift-version }}-RELEASE
+      - name: Set up Visual Studio (Windows)
+        uses: compnerd/gha-setup-vsdevenv@main
 
       - name: Verify swift version
         run: swift --version && swift --version | grep -q ${{ env.swift-version }}
