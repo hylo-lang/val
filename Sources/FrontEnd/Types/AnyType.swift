@@ -188,9 +188,14 @@ public struct AnyType {
     self == .never
   }
 
-  /// Indicates whether `self` is a generic type parameter or associated type.
+  /// `true` iff `self` is a generic type parameter or associated type.
   public var isTypeParameter: Bool {
     (base is AssociatedTypeType) || (base is GenericTypeParameterType)
+  }
+
+  /// `true` iff `self` is a type variable.
+  public var isVariable: Bool {
+    base is TypeVariable
   }
 
   /// Returns `true` iff `self` is bound to an existential quantifier.
