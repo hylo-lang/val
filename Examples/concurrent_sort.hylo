@@ -1,0 +1,294 @@
+
+let size_threshold = 16
+
+trait Printable {
+  fun print_self()
+}
+
+public conformance Int: Printable {
+  fun print_self() {
+    print(self, terminator: "")
+  }
+}
+public conformance String: Printable {
+  fun print_self() {
+    print(self, terminator: "")
+  }
+}
+
+fun my_concurrent_sort<Element: Regular & Comparable & Printable>(_ a: inout ArraySlice<Element>) -> Int {
+  print("my_concurrent_sort: ", terminator: "")
+  print(a.start_index, terminator: "")
+  print(", ", terminator: "")
+  print(a.end_index, terminator: "")
+  print(")")
+  a.print_self()
+  if a.count() < size_threshold {
+    // Use serial sort under a certain threshold.
+    a.sort()
+  } else {
+    // Partition the data, such as elements [0, mid) < [mid] <= [mid+1, n).
+    let (m1, m2) = sort_partition(&a)
+    // print("  split at ", terminator: "")
+    // print(m1, terminator: "")
+    // print("/", terminator: "")
+    // print(m2, terminator: "")
+    // print(" => ", terminator: "")
+    // print_array_slice(a, highlight_index: m1 + a.start_index)
+    inout (lhs, rhs) = &a.split(at: m1)
+    &rhs.drop_first(m2 - m1)
+
+    // Spawn work to sort the right-hand side.
+    let future = spawn_(fun() -> Int {
+      print("spawned {")
+      // rhs.print_self()
+      // let r = my_concurrent_sort(&rhs)
+      print("} finished")
+      // return r
+      return 0
+    })
+    // Execute the sorting on the left side, on the current thread.
+    // let _ = my_concurrent_sort(&lhs)
+    // print("  lhs sorted: ", terminator: "")
+    // print_array_slice(lhs)
+    // We are done when both sides are done.
+    print("await start")
+    let _ = future.await()
+    print("await done")
+    // let _ = my_concurrent_sort(&rhs)
+    // print("  rhs sorted: ", terminator: "")
+    // print_array_slice(rhs)
+  }
+  return a.count()
+}
+
+fun sort_partition<Element: Regular & Comparable & Printable>(_ a: inout ArraySlice<Element>) -> {Int, Int} {
+  let mid_value = median9(a)
+  // print("  median: ", terminator: "")
+  // mid_value.print_self()
+  // print("")
+  return a.partition(on: mid_value)
+  // return a.partition(by: fun(_ e: Element) -> Bool { e > mid_value })
+}
+fun median3<Element: Regular & Comparable>(_ v1: Element, _ v2: Element, _ v3: Element) -> Element {
+  if v1 < v2 {
+    if v2 < v3 {
+      return v2.copy()
+    }
+    if v1 < v3 {
+      return v3.copy()
+    }
+    return v1.copy()
+  } else {
+    if v1 < v3 {
+      return v1.copy()
+    }
+    if v2 < v3 {
+      return v3.copy()
+    }
+    return v2.copy()
+  }
+}
+fun median9<Element: Regular & Comparable>(_ a: inout ArraySlice<Element>) -> Element {
+  let n = a.count()
+  precondition(n >= 8)
+  let stride = n / 8
+  let m1 = median3(a[0], a[stride], a[stride * 2])
+  let m2 = median3(a[stride * 3], a[stride * 4], a[stride * 5])
+  let m3 = median3(a[stride * 6], a[stride * 7], a[n - 1])
+  return median3(m1, m2, m3)
+}
+
+
+// TODO: this should be cleaned up and put in the standard library.
+type ArraySlice<Element: Regular & Comparable> : Deinitializable, Movable {
+
+  // TODO: utterly unsafe
+  var origin: PointerToMutable<Array<Element>>
+
+  let start_index: Int // absolute index in the array
+  let end_index: Int // absolute index in the array
+
+  init() {
+    &self.origin = PointerToMutable<Array<Element>>.null()
+    &self.start_index = 0
+    &self.end_index = 0
+  }
+
+  init(full_array: inout Array<Element>) {
+    &self.origin = mutable_pointer[to: full_array].copy()
+    &self.start_index = full_array.start_position()
+    &self.end_index = full_array.end_position()
+  }
+  init(source: Self, from start: Int, to end: Int) {
+    precondition(start >= 0 && start <= end && end <= source.count())
+    &self.origin = source.origin.copy()
+    &self.start_index = source.start_index + start
+    &self.end_index = source.start_index + end
+  }
+
+  fun count() -> Int {
+    end_index - start_index
+  }
+
+  fun sort() {
+    var elements = origin.unsafe_pointee()
+    do {
+      var swapped = false
+      var i = start_index.copy()
+      while i < end_index - 1 {
+        if elements[i] > elements[i + 1] {
+          &elements.swap_at(i, i + 1)
+          &swapped = true
+        }
+        i += 1
+      }
+    } while swapped
+  }
+
+  fun split(at: Int) -> {ArraySlice<Element>, ArraySlice<Element>} {
+    precondition(0 <= at && at <= count())
+    return (slice(from: 0, to: at), slice(from: at, to: count()))
+  }
+
+  fun partition(on mid_value: Element) -> {Int, Int} {
+    var elements = origin.unsafe_pointee()
+    // First pass to move elements smaller than mid_value to the left.
+    var i = start_index.copy()
+    var j = end_index.copy()
+    while true {
+      while i < j && elements[i] < mid_value { &i += 1 }
+      while i < j && elements[j - 1] >= mid_value { &j -= 1 }
+      if i >= j { break }
+      &elements.swap_at(i, j - 1)
+      &i += 1
+      &j -= 1
+    }
+    let m1 = i - start_index
+
+    // Second pass to move the elements equal to mid_value to the left.
+    &j = end_index.copy()
+    while true {
+      while i < j && elements[i] <= mid_value { &i += 1 }
+      while i < j && elements[j - 1] > mid_value { &j -= 1 }
+      if i >= j { break }
+      &elements.swap_at(i, j - 1)
+      &i += 1
+      &j -= 1
+    }
+    let m2 = i - start_index
+
+    return (m1, m2)
+  }
+
+  fun slice(from start: Int, to end: Int) -> Self {
+    precondition(0 <= start && start <= end && end <= count())
+    let r: Self = .new(full_array: &origin.unsafe[])
+    &r.start_index = start_index + start
+    &r.end_index = start_index + end
+    return r
+  }
+
+  fun drop_first(_ n: Int) inout {
+    precondition(n <= count())
+    &start_index += n
+  }
+
+  subscript(_ position: Int): Element {
+    // print("  access: ", terminator: "")
+    // print(position)
+
+    precondition(position < count())
+    let elements = origin.unsafe_pointee()
+    yield elements[start_index + position].copy()
+  }
+
+  fun print_self() {
+    print("0x", terminator: "")
+    let address = Int(bit_pattern: MemoryAddress.new(origin))
+    print(address, radix:16)
+  }
+
+}
+
+@ffi("rand")
+public fun rand() -> Int
+
+fun generate_random_array(size: Int) -> Array<Int> {
+  var r = Array<Int>()
+  r.reserve_capacity(size)
+  var i = 0
+  while i < size {
+    r.append(rand() % 100)
+    &i += 1
+  }
+  return r
+}
+
+fun is_sorted(_ a: Array<Int>) -> Bool {
+  var i = 0
+  while i < a.count() - 1 {
+    if a[i] > a[i + 1] {
+      return false
+    }
+    &i += 1
+  }
+  return true
+}
+
+fun print_array_slice<E: Regular & Comparable & Printable>(_ a: ArraySlice<E>, highlight_index: Int = -1) {
+  var elements = a.origin.unsafe_pointee()
+  var i = 0
+  while i < elements.count() {
+    if i == a.start_index {
+      print("[ ", terminator: "")
+    }
+    if i == a.end_index {
+      print("] ", terminator: "")
+    }
+    if i == highlight_index {
+      print("* ", terminator: "")
+    }
+    elements[i].print_self()
+    print(" ", terminator: "")
+    &i += 1
+  }
+  if i == a.start_index {
+    print("[ ", terminator: "")
+  }
+  if i == a.end_index {
+    print("] ", terminator: "")
+  }
+  print("")
+}
+
+public fun main() {
+  print("Starting...")
+  let size = 100
+  var a = generate_random_array(size: size)
+  // var i = 0
+  // while i < size {
+  //   print(a[i])
+  //   &i += 1
+  // }
+
+  var slice = ArraySlice(full_array: &a)
+  print("Sorting...")
+  // slice.sort()
+  let _ = my_concurrent_sort(&slice)
+  // print("  =>", terminator: "")
+  // print_array_slice(slice)
+
+  let r = is_sorted(a)
+  if r {
+    print("Array is sorted")
+  }
+  else {
+    print("ERROR: Array is not sorted")
+  }
+  // print(concurrent_greeting())
+  // print("Finishing...")
+}
+
+// Compile this with:
+// > hc conc.hylo -l concore2full -l context_core_api -l boost_context -l c++ -L <path-to-concore2full> -L <path-to-boost>
