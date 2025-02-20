@@ -1,6 +1,6 @@
 //- compileAndRun expecting: .success
 
-public fun test_conformance_to_iterator() {
+private fun test_conformance_to_iterator() {
   var r = 1 ..< 3
   var x: Int
 
@@ -12,6 +12,18 @@ public fun test_conformance_to_iterator() {
   precondition(x == -1)
 
   precondition(r.lower_bound == r.upper_bound)
+}
+
+private fun test_non_comparable() {
+  struct NonComparable: SemiRegular {
+    public memberwise init
+    let x: Int
+  }
+
+  var r0 = NonComparable(0) ..< NonComparable(0)
+  precondition(r0.is_empty())
+  var r1 = NonComparable(0) ..< NonComparable(1)
+  precondition(!r1.is_empty())
 }
 
 public fun main() {
@@ -27,4 +39,5 @@ public fun main() {
   precondition(!r0.contains(5 ..< 15))
 
   test_conformance_to_iterator()
+  test_non_comparable()
 }
