@@ -151,7 +151,7 @@ jobs:
 
       - name: Upload coverage reports to Codecov
         if: ${{ contains(matrix.more-spm-test-options, '--enable-code-coverage') }}
-        uses: codecov/codecov-action@v4.5.0
+        uses: codecov/codecov-action@v5.1.1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: true
