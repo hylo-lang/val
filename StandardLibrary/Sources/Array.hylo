@@ -164,7 +164,7 @@ public type Array<Element: SemiRegular>: SemiRegular {
     let c = count()
     var i = 0
     while i < c {
-      &pointer_to_element(at: i).unsafe_pointee().deinit()
+      pointer_to_element(at: i).unsafe_pointee().deinit()
       &i += 1
     }
     &storage.header = 0
@@ -192,7 +192,7 @@ public type Array<Element: SemiRegular>: SemiRegular {
     var i = count() - 1
     var j = 0
     while i > j {
-      swap_at(i, j)
+      &swap_at(i, j)
       &i -= 1
       &j += 1
     }

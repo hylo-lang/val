@@ -4,7 +4,7 @@ trait MutableCollection: Collection {
   /// Accesses the element at position `i`.
   ///
   /// - Requires: `i` is a valid position in `self` different from `end_position()`.
-  subscript(_ i: Position): Element { inout }
+  subscript(_ i: Position): Element { let inout }
 
   /// Exchanges the values at the given positions in `self`.
   ///
